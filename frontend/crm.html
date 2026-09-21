@@ -202,6 +202,72 @@ body {
   padding:24px 28px; width:520px; max-width:95vw; max-height:85vh;
   overflow-y:auto; position:relative; border-radius:8px;
 }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  body { padding-bottom: 70px; }
+
+  #main {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Sidebar = full width list on mobile */
+  #sidebar {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  #kunde-list { max-height: 60vh; overflow-y: auto; }
+
+  /* Detail panel = full width below list */
+  #detail {
+    padding: 16px;
+    min-height: 50vh;
+  }
+
+  /* When detail is active, hide list and show detail full screen */
+  #main.detail-open #sidebar { display: none; }
+  #main.detail-open #detail { min-height: calc(100vh - 130px); }
+
+  /* Back button on mobile detail */
+  #mobile-back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0 0 12px 0;
+  }
+
+  /* Info grid single column */
+  .info-grid { grid-template-columns: 1fr; }
+
+  /* Stats row scrollable */
+  .top-stats { overflow-x: auto; gap: 16px; }
+
+  /* CRM topbar compact on mobile */
+  #topbar { padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
+  .top-actions .btn:not(.primary) { display: none; }
+  .logo-sub { display: none; }
+
+  /* Modal full screen bottom sheet */
+  .modal-bg { align-items: flex-end; }
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 92vh;
+    padding: 20px 16px;
+  }
+}
 .modal-title { font-size:15px; font-weight:700; color:var(--text); margin-bottom:20px; }
 .modal-close { position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text2); cursor:pointer; font-size:18px; }
 .modal-close:hover { color:var(--red); }
@@ -292,6 +358,7 @@ body {
 
   <!-- DETAIL -->
   <div id="detail">
+    <button id="mobile-back" style="display:none" onclick="mobileBack()">← Zurück zur Liste</button>
     <div id="empty-state">
       <div class="es-icon">◎</div>
       <div class="es-text">KUNDE AUSWÄHLEN ODER NEU ANLEGEN</div>
@@ -554,12 +621,24 @@ function setFilter(kat) {
   loadKunden();
 }
 
+// ── Mobile back ───────────────────────────────────────────────────────────────
+function mobileBack() {
+  document.getElementById('main').classList.remove('detail-open');
+  document.getElementById('mobile-back').style.display = 'none';
+}
+
 // ── Detail ────────────────────────────────────────────────────────────────────
 async function loadDetail(kid) {
   aktuellerKunde = await api(`/api/crm/kunden/${kid}`);
   renderDetail();
   renderListe();
   loadAngebote(kid);
+  // Mobile: switch to detail view
+  if (window.innerWidth <= 768) {
+    document.getElementById('main').classList.add('detail-open');
+    document.getElementById('mobile-back').style.display = 'flex';
+    window.scrollTo(0, 0);
+  }
 }
 
 function renderDetail() {

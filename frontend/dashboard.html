@@ -34,6 +34,8 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
   .panel { min-height: 280px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border); }
   #panel-heute { min-height: 200px; }
   #statusbar { display: none; }
+  /* hide clock/date/weather on mobile — too crowded */
+  #clock, #date-disp, #weather-box { display: none !important; }
 }
 
 /* ── ALL PANELS ── */

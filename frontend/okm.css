@@ -373,6 +373,8 @@ body {
   }
   .toast { max-width: 100%; }
 
-  /* Topbar right: keep compact */
-  .okm-topbar-right a span { display: none; }
+  /* Topbar right: only show avatar on mobile */
+  .okm-topbar-right a:not([id="me-avatar-link"]) { display: none; }
+  .okm-topbar-right .nav-sep { display: none; }
+  #me-name { display: none !important; }
 }
