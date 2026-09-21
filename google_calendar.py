@@ -98,10 +98,10 @@ def handle_callback(code: str, state: str = "") -> bool:
                 "token": tokens.get("access_token"),
                 "refresh_token": tokens.get("refresh_token"),
             }, f)
-        return True
+        return True, ""
     except Exception as e:
         print(f"[gcal] callback error: {e}")
-        return False
+        return False, str(e)
 
 
 def is_connected() -> bool:

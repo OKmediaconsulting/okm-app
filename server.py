@@ -2512,7 +2512,7 @@ async def gcal_oauth_callback(code: str = "", error: str = "", state: str = ""):
     from fastapi.responses import HTMLResponse
     if error:
         return HTMLResponse(f"<h2>Fehler: {error}</h2>")
-    ok = google_calendar.handle_callback(code, state)
+    ok, err = google_calendar.handle_callback(code, state)
     if ok:
         return HTMLResponse("""
         <html><body style="font-family:sans-serif;text-align:center;padding:60px">
@@ -2520,7 +2520,7 @@ async def gcal_oauth_callback(code: str = "", error: str = "", state: str = ""):
         <p>Du kannst dieses Fenster schließen.</p>
         <script>setTimeout(()=>window.close(),2000)</script>
         </body></html>""")
-    return HTMLResponse("<h2>❌ Fehler beim Verbinden. Bitte nochmal versuchen.</h2>")
+    return HTMLResponse(f"<h2>❌ Fehler: {err}</h2>")
 
 @app.get("/api/calendar/status")
 async def gcal_status(request: Request):
