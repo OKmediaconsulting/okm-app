@@ -1810,20 +1810,24 @@ DREHHINWEIS: [Optional]"""
 # ── Instagram ─────────────────────────────────────────────────────────────────
 
 @app.get("/api/instagram/kunden/{kid}")
-async def api_instagram_liste(kid: int):
+async def api_instagram_liste(kid: int, request: Request):
+    _require(request, "scripts.view")
+    _check_customer_access(request, kid)
     posts = scripts_tools.instagram_posts_fuer_kunde(kid)
     return {"posts": posts}
 
 
 @app.delete("/api/instagram/{post_id}")
-async def api_instagram_loeschen(post_id: int):
+async def api_instagram_loeschen(post_id: int, request: Request):
+    _require(request, "scripts.delete")
     scripts_tools.instagram_post_loeschen(post_id)
     return {"ok": True}
 
 
 @app.post("/api/instagram/generieren")
-async def api_instagram_generieren(data: dict):
+async def api_instagram_generieren(request: Request, data: dict):
     """Generiert einen professionellen Instagram-Beitrag oder Carousel."""
+    _require(request, "scripts.create")
     if "kunden_id" not in data or not data.get("thema", "").strip():
         raise HTTPException(400, "kunden_id und thema erforderlich")
     try:
@@ -1990,12 +1994,16 @@ HASHTAGS: [#tag1 #tag2 ...]"""
 # ── Branding ─────────────────────────────────────────────────────────────────
 
 @app.get("/api/branding/{kid}")
-async def api_branding_get(kid: int):
+async def api_branding_get(kid: int, request: Request):
+    _require(request, "scripts.view")
+    _check_customer_access(request, kid)
     return scripts_tools.branding_fuer_kunde(kid) or {}
 
 
 @app.put("/api/branding/{kid}")
-async def api_branding_set(kid: int, data: dict):
+async def api_branding_set(kid: int, request: Request, data: dict):
+    _require(request, "scripts.edit")
+    _check_customer_access(request, kid)
     kunde = scripts_tools.kunde_detail(kid)
     if not kunde:
         raise HTTPException(404, "Kunde nicht gefunden")
@@ -2006,7 +2014,9 @@ async def api_branding_set(kid: int, data: dict):
 # ── Erweiterte Kunden-Update (website, produkte, social_media_ziele) ─────────
 
 @app.put("/api/skripte/kunden/{kid}/profil")
-async def api_kunde_profil_update(kid: int, data: dict):
+async def api_kunde_profil_update(kid: int, request: Request, data: dict):
+    _require(request, "scripts.edit")
+    _check_customer_access(request, kid)
     """Aktualisiert das erweiterte Kundenprofil inkl. website-Feld."""
     erlaubte = {
         "name", "branche", "standort", "zielgruppe", "ziele", "leistungen",
@@ -2370,7 +2380,7 @@ NAECHSTER_SCHRITT:
 _heute_cache: dict = {"date": None, "data": None}
 
 @app.get("/api/heute-wichtig")
-async def api_heute_wichtig():
+async def api_heute_wichtig(request: Request):
     from fastapi.responses import JSONResponse
     import datetime as _dt
     today = _dt.date.today().isoformat()
