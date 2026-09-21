@@ -149,7 +149,10 @@ tell application "Google Chrome"
     set URL of newTab to "{default_url}"
 end tell
 """
-    subprocess.run(["osascript", "-e", script], capture_output=True, timeout=10)
+    try:
+        subprocess.run(["osascript", "-e", script], capture_output=True, timeout=10)
+    except (FileNotFoundError, OSError):
+        pass
     time.sleep(6)  # Seite laden lassen
 
     # Nochmal prüfen

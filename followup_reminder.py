@@ -14,11 +14,14 @@ import crm_tools
 def notify(title: str, message: str):
     script = f'display notification "{message}" with title "{title}" sound name "Glass"'
     # Über Script Editor senden — hat macOS Notification-Berechtigung
-    subprocess.run([
-        "osascript", "-e",
-        f'tell application "Script Editor" to run',
-        "-e", script
-    ])
+    try:
+        subprocess.run([
+            "osascript", "-e",
+            f'tell application "Script Editor" to run',
+            "-e", script
+        ])
+    except (FileNotFoundError, OSError):
+        pass
 
 
 def main():

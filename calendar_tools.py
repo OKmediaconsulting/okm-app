@@ -10,11 +10,14 @@ from datetime import datetime, timedelta
 
 
 def _run_applescript(script: str) -> str:
-    result = subprocess.run(
-        ["osascript", "-e", script],
-        capture_output=True, text=True
-    )
-    return result.stdout.strip()
+    try:
+        result = subprocess.run(
+            ["osascript", "-e", script],
+            capture_output=True, text=True, timeout=10
+        )
+        return result.stdout.strip()
+    except (FileNotFoundError, OSError):
+        return ""
 
 
 def get_today_events() -> list[dict]:

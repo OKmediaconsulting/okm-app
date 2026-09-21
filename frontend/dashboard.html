@@ -23,6 +23,19 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
   background: var(--border);
 }
 
+@media (max-width: 768px) {
+  body { height: auto; overflow: auto; }
+  #hud {
+    display: flex; flex-direction: column;
+    height: auto; overflow: visible;
+    background: var(--bg); gap: 8px;
+    padding: 8px;
+  }
+  .panel { min-height: 280px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border); }
+  #panel-heute { min-height: 200px; }
+  #statusbar { display: none; }
+}
+
 /* ── ALL PANELS ── */
 .panel {
   background: var(--surface);
@@ -191,6 +204,32 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
     <span id="me-name" style="font-size:12px;color:var(--text-2)"></span>
     <button id="me-avatar" onclick="logout()" title="Abmelden"
       style="width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0">?</button>
+  </div>
+</nav>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="okm-bottom-nav">
+  <div class="okm-bottom-nav-inner">
+    <a href="/dashboard" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="/crm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      CRM
+    </a>
+    <a href="/skripte">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Skripte
+    </a>
+    <a href="/recherche">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Recherche
+    </a>
+    <a href="/team">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Team
+    </a>
   </div>
 </nav>
 

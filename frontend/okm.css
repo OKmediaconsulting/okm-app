@@ -306,3 +306,73 @@ body {
 .flex { display: flex; align-items: center; }
 .flex-1 { flex: 1; min-width: 0; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── MOBILE NAV TOGGLE ── */
+.okm-nav-toggle {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  padding: 6px; color: var(--text-2);
+  flex-shrink: 0;
+}
+.okm-nav-toggle svg { display: block; }
+
+/* ── MOBILE BOTTOM NAV ── */
+.okm-bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+}
+.okm-bottom-nav-inner {
+  display: flex; justify-content: space-around; align-items: center;
+}
+.okm-bottom-nav a {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 4px 8px; border-radius: var(--radius);
+  font-size: 10px; font-weight: 500; color: var(--text-3);
+  text-decoration: none; min-width: 48px; text-align: center;
+  transition: color var(--transition);
+}
+.okm-bottom-nav a.active { color: var(--blue); }
+.okm-bottom-nav a svg { width: 20px; height: 20px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  /* Topbar: hide desktop nav links, show logo + avatar only */
+  .okm-nav { display: none; }
+  .okm-topbar { padding: 0 16px; }
+  .okm-logo { margin-right: auto; }
+
+  /* Show bottom nav on mobile */
+  .okm-bottom-nav { display: block; }
+
+  /* Add bottom padding so content isn't hidden behind bottom nav */
+  body { padding-bottom: 70px; }
+
+  /* Buttons full width on mobile when stacked */
+  .btn-mobile-full { width: 100%; justify-content: center; }
+
+  /* Modals full screen on mobile */
+  .modal-backdrop { padding: 0; align-items: flex-end; }
+  .modal {
+    max-width: 100%; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 92vh;
+  }
+
+  /* Tables scroll horizontally */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Cards stack full width */
+  .card { border-radius: var(--radius); }
+
+  /* Toast bottom-center on mobile */
+  .toast-container {
+    bottom: 80px; left: 16px; right: 16px;
+    align-items: stretch;
+  }
+  .toast { max-width: 100%; }
+
+  /* Topbar right: keep compact */
+  .okm-topbar-right a span { display: none; }
+}
