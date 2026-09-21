@@ -76,17 +76,22 @@ def get_auth_url() -> str:
 
 def handle_callback(code: str, state: str = "") -> bool:
     try:
-        import requests as _req
-        data = {
+        import urllib.request
+        import urllib.parse
+        data = urllib.parse.urlencode({
             "code": code,
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET,
             "redirect_uri": REDIRECT_URI,
             "grant_type": "authorization_code",
-        }
-        r = _req.post("https://oauth2.googleapis.com/token", data=data, timeout=10)
-        r.raise_for_status()
-        tokens = r.json()
+        }).encode()
+        req = urllib.request.Request(
+            "https://oauth2.googleapis.com/token",
+            data=data,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            tokens = json.loads(resp.read())
         os.makedirs(os.path.dirname(TOKEN_FILE), exist_ok=True)
         with open(TOKEN_FILE, "w") as f:
             json.dump({
