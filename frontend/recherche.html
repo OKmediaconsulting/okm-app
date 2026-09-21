@@ -41,6 +41,21 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 /* ── LAYOUT ── */
 #app { display:flex; height:calc(100vh - 57px); }
 
+@media (max-width: 768px) {
+  #app { flex-direction: column; height: auto; padding-bottom: 70px; }
+  #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  #recherche-liste { max-height: 45vh; overflow-y: auto; }
+  #detail { padding: 16px; min-height: 50vh; }
+  #app.detail-open #sidebar { display: none; }
+  #app.detail-open #detail { min-height: calc(100vh - 130px); }
+  #mobile-back-rch {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: none; color: var(--accent);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    padding: 0 0 12px 0;
+  }
+}
+
 /* ── SIDEBAR ── */
 #sidebar {
   width:260px; flex-shrink:0; border-right:1px solid var(--border);
@@ -190,6 +205,7 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 
   <!-- DETAIL -->
   <div id="detail">
+    <button id="mobile-back-rch" style="display:none" onclick="mobileBackRch()">← Zurück zur Liste</button>
     <div id="empty-state">
       <div class="es-icon">✦</div>
       <div class="es-text">Recherche auswählen oder neue erstellen</div>
@@ -338,6 +354,12 @@ async function loadDetail(rid) {
   const quellen = (r.quellen||'').split('\n').filter(q=>q.trim());
   const tags = (r.tags||'').split(',').filter(t=>t.trim());
 
+  if (window.innerWidth <= 768) {
+    document.getElementById('app').classList.add('detail-open');
+    document.getElementById('mobile-back-rch').style.display = 'flex';
+    window.scrollTo(0, 0);
+  }
+
   d.innerHTML = `
     <div class="d-header">
       <div>
@@ -361,6 +383,11 @@ async function loadDetail(rid) {
       ${quellen.map(q=>`<a class="quelle-link" href="${esc(q)}" target="_blank">${esc(q)}</a>`).join('')}
     </div>` : ''}
   `;
+}
+
+function mobileBackRch() {
+  document.getElementById('app').classList.remove('detail-open');
+  document.getElementById('mobile-back-rch').style.display = 'none';
 }
 
 // ── Neue Recherche (manuell) ──────────────────────────────────────────────────

@@ -95,6 +95,21 @@
     padding-top: 52px;
   }
 
+  @media (max-width: 768px) {
+    .app { height: auto; flex-direction: column; padding-top: 52px; padding-bottom: 70px; }
+    .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); overflow: visible; }
+    .customer-list { max-height: 50vh; overflow-y: auto; }
+    .main { overflow-y: visible; }
+    .app.detail-open .sidebar { display: none; }
+    .app.detail-open .main { display: flex; }
+    #mobile-back-skr {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none; color: var(--blue);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      padding: 12px 16px 4px;
+    }
+  }
+
   /* ── SIDEBAR ── */
   .sidebar {
     width: 280px;
@@ -1042,6 +1057,7 @@
 
   <!-- MAIN AREA -->
   <main class="main" id="main">
+  <button id="mobile-back-skr" style="display:none" onclick="mobileBackSkr()">← Zurück zur Liste</button>
 
     <!-- EMPTY STATE -->
     <div class="empty-state" id="empty-state">
@@ -1705,9 +1721,19 @@ async function selectCustomer(id) {
     checkMonthWarning();
     renderCanvaBox(customer);
     loadCanvaPosts(customer.id);
+    if (window.innerWidth <= 768) {
+      document.querySelector('.app').classList.add('detail-open');
+      document.getElementById('mobile-back-skr').style.display = 'flex';
+      window.scrollTo(0, 0);
+    }
   } catch (e) {
     $('view-name').textContent = 'Fehler beim Laden';
   }
+}
+
+function mobileBackSkr() {
+  document.querySelector('.app').classList.remove('detail-open');
+  document.getElementById('mobile-back-skr').style.display = 'none';
 }
 
 function renderCustomerView(c) {
