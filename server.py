@@ -2502,8 +2502,7 @@ async def api_execute_repair(repair_id: str):
 # ── Google Calendar OAuth ──────────────────────────────────────────────────────
 
 @app.get("/api/calendar/oauth/start")
-async def gcal_oauth_start(request: Request):
-    _require(request, "research.view")
+async def gcal_oauth_start():
     from fastapi.responses import RedirectResponse
     url = google_calendar.get_auth_url()
     return RedirectResponse(url)
