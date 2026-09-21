@@ -20,25 +20,29 @@ SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 TOKEN_FILE = os.path.join(os.environ.get("DATA_DIR", "/app/data"), "google_token.json")
 
 
-def _load_creds() -> Credentials | None:
-    if not os.path.exists(TOKEN_FILE):
+def _load_creds():
+    refresh_token = os.environ.get("GOOGLE_REFRESH_TOKEN", "")
+    if not refresh_token and os.path.exists(TOKEN_FILE):
+        try:
+            with open(TOKEN_FILE) as f:
+                refresh_token = json.load(f).get("refresh_token", "")
+        except Exception:
+            pass
+    if not refresh_token:
         return None
     try:
-        with open(TOKEN_FILE) as f:
-            data = json.load(f)
         creds = Credentials(
-            token=data.get("token"),
-            refresh_token=data.get("refresh_token"),
+            token=None,
+            refresh_token=refresh_token,
             token_uri="https://oauth2.googleapis.com/token",
             client_id=CLIENT_ID,
             client_secret=CLIENT_SECRET,
             scopes=SCOPES,
         )
-        if creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-            _save_creds(creds)
+        creds.refresh(Request())
         return creds
-    except Exception:
+    except Exception as e:
+        print(f"[gcal] creds error: {e}")
         return None
 
 
