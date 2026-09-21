@@ -2508,11 +2508,11 @@ async def gcal_oauth_start(request: Request):
     return RedirectResponse(url)
 
 @app.get("/api/calendar/oauth/callback")
-async def gcal_oauth_callback(code: str = "", error: str = ""):
+async def gcal_oauth_callback(code: str = "", error: str = "", state: str = ""):
     from fastapi.responses import HTMLResponse
     if error:
         return HTMLResponse(f"<h2>Fehler: {error}</h2>")
-    ok = google_calendar.handle_callback(code)
+    ok = google_calendar.handle_callback(code, state)
     if ok:
         return HTMLResponse("""
         <html><body style="font-family:sans-serif;text-align:center;padding:60px">

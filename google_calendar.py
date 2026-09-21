@@ -74,24 +74,25 @@ def get_auth_url() -> str:
     return url
 
 
-def handle_callback(code: str) -> bool:
+def handle_callback(code: str, state: str = "") -> bool:
     try:
-        from google_auth_oauthlib.flow import Flow
-        flow = Flow.from_client_config(
-            {
-                "web": {
-                    "client_id": CLIENT_ID,
-                    "client_secret": CLIENT_SECRET,
-                    "redirect_uris": [REDIRECT_URI],
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                }
-            },
-            scopes=SCOPES,
-            redirect_uri=REDIRECT_URI,
-        )
-        flow.fetch_token(code=code)
-        _save_creds(flow.credentials)
+        import requests as _req
+        data = {
+            "code": code,
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "redirect_uri": REDIRECT_URI,
+            "grant_type": "authorization_code",
+        }
+        r = _req.post("https://oauth2.googleapis.com/token", data=data, timeout=10)
+        r.raise_for_status()
+        tokens = r.json()
+        os.makedirs(os.path.dirname(TOKEN_FILE), exist_ok=True)
+        with open(TOKEN_FILE, "w") as f:
+            json.dump({
+                "token": tokens.get("access_token"),
+                "refresh_token": tokens.get("refresh_token"),
+            }, f)
         return True
     except Exception as e:
         print(f"[gcal] callback error: {e}")
