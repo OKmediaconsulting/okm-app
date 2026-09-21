@@ -2523,18 +2523,15 @@ async def gcal_oauth_callback(code: str = "", error: str = "", state: str = ""):
     return HTMLResponse(f"<h2>❌ Fehler: {err}</h2>")
 
 @app.get("/api/calendar/status")
-async def gcal_status(request: Request):
-    _require(request, "research.view")
+async def gcal_status():
     return {"connected": google_calendar.is_connected()}
 
 @app.get("/api/calendar/today")
-async def gcal_today(request: Request):
-    _require(request, "research.view")
+async def gcal_today():
     return {"events": google_calendar.get_today_events()}
 
 @app.get("/api/calendar/week")
-async def gcal_week(request: Request):
-    _require(request, "research.view")
+async def gcal_week():
     return {"events": google_calendar.get_week_events()}
 
 
