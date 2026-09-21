@@ -99,9 +99,17 @@ def _parse_events(data: dict) -> list:
 
 
 def get_today_events() -> list:
-    now = datetime.now(timezone.utc)
-    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end = start + timedelta(days=1)
+    from datetime import timezone as tz
+    import zoneinfo
+    try:
+        local_tz = zoneinfo.ZoneInfo("Europe/Berlin")
+        now = datetime.now(local_tz)
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1)
+    except Exception:
+        now = datetime.now(timezone.utc)
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1)
     data = _api_get("calendars/primary/events", {
         "timeMin": start.isoformat(),
         "timeMax": end.isoformat(),
