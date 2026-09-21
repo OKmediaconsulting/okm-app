@@ -111,6 +111,7 @@ import browser_tools
 import screen_capture
 import gmail_tools
 import calendar_tools
+import google_calendar
 import meta_tools
 import content_tools
 import crm_tools
@@ -670,7 +671,7 @@ async def execute_action(action: dict) -> str:
 
     elif t == "CALENDAR_TODAY":
         try:
-            events = calendar_tools.get_today_events()
+            events = google_calendar.get_today_events()
             if not events:
                 return "Keine Termine heute."
             return "Heutige Termine:\n" + "\n".join(f"- {e['title']} um {e['start']}" for e in events)
@@ -679,7 +680,7 @@ async def execute_action(action: dict) -> str:
 
     elif t == "CALENDAR_WEEK":
         try:
-            events = calendar_tools.get_week_events()
+            events = google_calendar.get_week_events()
             if not events:
                 return "Keine Termine diese Woche."
             return "Termine diese Woche:\n" + "\n".join(f"- {e['title']} am {e['start']}" for e in events)
@@ -843,7 +844,7 @@ async def dashboard_data():
 
     # Kalender
     try:
-        events = calendar_tools.get_today_events()
+        events = google_calendar.get_today_events()
         result["events"] = [{"title": ev["title"], "start": ev["start"]} for ev in events]
     except Exception as e:
         result["events"] = []
@@ -2495,6 +2496,46 @@ async def api_execute_repair(repair_id: str):
         return JSONResponse(result)
     except Exception as e:
         return JSONResponse({"ok": False, "message": str(e)}, status_code=500)
+
+
+# ── Google Calendar OAuth ──────────────────────────────────────────────────────
+
+@app.get("/api/calendar/oauth/start")
+async def gcal_oauth_start(request: Request):
+    _require(request, "research.view")
+    from fastapi.responses import RedirectResponse
+    url = google_calendar.get_auth_url()
+    return RedirectResponse(url)
+
+@app.get("/api/calendar/oauth/callback")
+async def gcal_oauth_callback(code: str = "", error: str = ""):
+    from fastapi.responses import HTMLResponse
+    if error:
+        return HTMLResponse(f"<h2>Fehler: {error}</h2>")
+    ok = google_calendar.handle_callback(code)
+    if ok:
+        return HTMLResponse("""
+        <html><body style="font-family:sans-serif;text-align:center;padding:60px">
+        <h2>✅ Google Kalender verbunden!</h2>
+        <p>Du kannst dieses Fenster schließen.</p>
+        <script>setTimeout(()=>window.close(),2000)</script>
+        </body></html>""")
+    return HTMLResponse("<h2>❌ Fehler beim Verbinden. Bitte nochmal versuchen.</h2>")
+
+@app.get("/api/calendar/status")
+async def gcal_status(request: Request):
+    _require(request, "research.view")
+    return {"connected": google_calendar.is_connected()}
+
+@app.get("/api/calendar/today")
+async def gcal_today(request: Request):
+    _require(request, "research.view")
+    return {"events": google_calendar.get_today_events()}
+
+@app.get("/api/calendar/week")
+async def gcal_week(request: Request):
+    _require(request, "research.view")
+    return {"events": google_calendar.get_week_events()}
 
 
 if __name__ == "__main__":
