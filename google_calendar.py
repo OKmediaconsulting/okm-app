@@ -9,7 +9,7 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+CLIENT_ID = "571667776861-hj816hp5gm9r1ldkojcnficv58ql7nur.apps.googleusercontent.com"
 CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 REDIRECT_URI = os.environ.get(
     "GOOGLE_REDIRECT_URI",
