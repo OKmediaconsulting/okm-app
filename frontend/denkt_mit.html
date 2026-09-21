@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/static/sw.js");</script>
+<title>OK Media — Denkt mit</title>
+<link rel="stylesheet" href="/static/okm.css">
+<style>
+:root {
+  --bg:      #f4f6f8;
+  --panel:   #ffffff;
+  --panel2:  #f9fafb;
+  --border:  #e5e7eb;
+  --accent:  #2563eb;
+  --accent2: #1d4ed8;
+  --green:   #16a34a;
+  --orange:  #d97706;
+  --red:     #dc2626;
+  --text:    #111827;
+  --text2:   #6b7280;
+  --text3:   #9ca3af;
+  --gold:    #d97706;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 52px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 20px; gap: 12px; z-index: 100;
+}
+.topbar-logo {
+  font-size: 15px; font-weight: 700;
+  color: var(--text); margin-right: auto;
+}
+.topbar-logo span { color: var(--accent); }
+.nav-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 13px; border-radius: 5px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text2); font-size: 12px; text-decoration: none;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+  font-family: inherit;
+}
+.nav-btn:hover { border-color: var(--accent); color: var(--text); background: var(--panel2); }
+.nav-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(210,153,34,.08);
+}
+
+/* ── PAGE ── */
+.page {
+  padding: 72px 24px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px;
+}
+.page-title {
+  display: flex; align-items: center; gap: 12px;
+}
+.page-title-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: rgba(210,153,34,.12);
+  border: 1px solid rgba(210,153,34,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.page-title h1 {
+  font-size: 20px; font-weight: 700; color: var(--text);
+}
+.page-title p {
+  font-size: 12px; color: var(--text2); margin-top: 2px;
+}
+.refresh-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 18px; border-radius: 6px;
+  border: 1px solid rgba(210,153,34,.4);
+  background: rgba(210,153,34,.08);
+  color: var(--gold); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .15s; font-family: inherit;
+}
+.refresh-btn:hover { background: rgba(210,153,34,.16); border-color: var(--gold); }
+.refresh-btn:disabled { opacity: .5; cursor: not-allowed; }
+.refresh-btn .spin { animation: spin .9s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── META BADGES ── */
+.meta-strip {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.meta-badge {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--panel);
+  font-size: 12px; color: var(--text2);
+}
+.meta-badge .val {
+  font-weight: 700; color: var(--text);
+}
+.meta-badge.warn .val { color: var(--orange); }
+.meta-badge.alert .val { color: var(--red); }
+.meta-badge.ok .val { color: var(--green); }
+
+/* ── GRID ── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 16px;
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.card:hover { border-color: rgba(88,166,255,.25); }
+
+.card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel2);
+}
+.card-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.card-icon.gold    { background: rgba(210,153,34,.15); }
+.card-icon.blue    { background: rgba(88,166,255,.12); }
+.card-icon.red     { background: rgba(248,81,73,.12); }
+.card-icon.orange  { background: rgba(210,153,34,.12); }
+.card-icon.green   { background: rgba(63,185,80,.12); }
+
+.card-title {
+  font-size: 12px; font-weight: 700;
+  color: var(--text2); letter-spacing: .5px; text-transform: uppercase;
+}
+.card-body { padding: 18px; }
+
+/* ── EMPFEHLUNG (full width) ── */
+.card.full-width { grid-column: 1 / -1; }
+
+.empfehlung-text {
+  font-size: 16px; font-weight: 600;
+  color: var(--text); line-height: 1.6;
+  padding: 4px 0;
+}
+.empfehlung-text::before {
+  content: '✦ ';
+  color: var(--gold);
+}
+
+/* ── SCHRITT (full width, bottom) ── */
+.schritt-text {
+  font-size: 14px; color: var(--text); line-height: 1.6;
+}
+.schritt-text::before {
+  content: '→ ';
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── LISTEN ── */
+.item-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.item-list li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; line-height: 1.5; color: var(--text);
+}
+.item-list li .bullet {
+  width: 6px; height: 6px; border-radius: 50%;
+  margin-top: 6px; flex-shrink: 0;
+}
+.bullet-green  { background: var(--green); box-shadow: 0 0 6px rgba(63,185,80,.5); }
+.bullet-red    { background: var(--red);   box-shadow: 0 0 6px rgba(248,81,73,.5); }
+.bullet-orange { background: var(--orange);box-shadow: 0 0 6px rgba(210,153,34,.5); }
+.bullet-blue   { background: var(--accent); }
+
+/* Handlungsbedarf: Kundenname fett */
+.item-list li strong { color: var(--accent); font-weight: 600; }
+
+/* ── LOADING ── */
+.loading-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px; padding: 80px 20px;
+  grid-column: 1 / -1;
+}
+.loading-orb {
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  animation: spin .9s linear infinite;
+}
+.loading-text { font-size: 14px; color: var(--text2); }
+
+/* ── ERROR ── */
+.error-state {
+  grid-column: 1 / -1;
+  padding: 32px 20px; text-align: center;
+  color: var(--red); font-size: 14px;
+  background: rgba(248,81,73,.05);
+  border: 1px solid rgba(248,81,73,.2);
+  border-radius: 8px;
+}
+
+/* ── EMPTY ── */
+.empty-hint {
+  color: var(--text3); font-size: 12px; font-style: italic; padding: 4px 0;
+}
+
+/* ── TIMESTAMP ── */
+.timestamp {
+  text-align: right; font-size: 11px; color: var(--text3);
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="okm-topbar">
+  <a href="/dashboard" class="okm-logo">OK <span>Media</span></a>
+  <div class="okm-nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/crm">CRM</a>
+    <a href="/skripte">Skripte</a>
+    <a href="/recherche">Recherche</a>
+    <a href="/denkt-mit" class="active">Denkt mit</a>
+    <a href="/systemgesundheit">System</a>
+  </div>
+  <div class="okm-topbar-right" style="display:flex;align-items:center;gap:8px;margin-left:auto">
+    <span id="me-name" style="font-size:12px;color:var(--muted)"></span>
+    <button id="me-avatar" onclick="logout()" title="Abmelden"
+      style="width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0">?</button>
+  </div>
+</nav>
+
+<!-- PAGE -->
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="page-title">
+      <div class="page-title-icon">⬡</div>
+      <div>
+        <h1>OK Media denkt mit</h1>
+        <p>Proaktive Analyse aller Programmdaten — Empfehlungen, Chancen, Risiken</p>
+      </div>
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="loadAnalyse()">
+      <span id="refresh-icon">⟳</span> Analyse starten
+    </button>
+  </div>
+
+  <!-- META BADGES -->
+  <div class="meta-strip" id="meta-strip" style="display:none"></div>
+
+  <!-- CARDS -->
+  <div class="cards-grid" id="cards-grid">
+    <div class="loading-state" id="initial-state">
+      <div style="font-size:48px">⬡</div>
+      <div style="font-size:15px;color:var(--text2);text-align:center">
+        Klicke auf <strong style="color:var(--gold)">Analyse starten</strong><br>
+        Proaktive Analyse aller Programmdaten — gibt dir konkrete Empfehlungen.
+      </div>
+    </div>
+  </div>
+
+  <div class="timestamp" id="timestamp" style="display:none"></div>
+</div>
+
+<script>
+let lastLoad = null;
+
+async function loadAnalyse() {
+  const btn = document.getElementById('refresh-btn');
+  const icon = document.getElementById('refresh-icon');
+  const grid = document.getElementById('cards-grid');
+  const meta = document.getElementById('meta-strip');
+  const ts   = document.getElementById('timestamp');
+
+  btn.disabled = true;
+  icon.textContent = '↻';
+  icon.classList.add('spin');
+  btn.childNodes[1].textContent = ' Analysiert…';
+
+  grid.innerHTML = `
+    <div class="loading-state">
+      <div class="loading-orb"></div>
+      <div class="loading-text">Wertet Kunden, Leads, Skripte, Recherchen und Aufgaben aus…</div>
+    </div>`;
+  meta.style.display = 'none';
+  ts.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/jarvis/denkt-mit', { method: 'POST' });
+    if (!res.ok) throw new Error(`Serverfehler ${res.status}`);
+    const data = await res.json();
+    renderAnalyse(data);
+    lastLoad = new Date();
+    ts.textContent = `Letzte Analyse: ${lastLoad.toLocaleTimeString('de-DE')}`;
+    ts.style.display = 'block';
+  } catch (e) {
+    grid.innerHTML = `<div class="error-state">Fehler beim Laden: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    icon.classList.remove('spin');
+    icon.textContent = '⟳';
+    btn.childNodes[1].textContent = ' Neu analysieren';
+  }
+}
+
+function renderAnalyse(data) {
+  const grid = document.getElementById('cards-grid');
+  const meta = document.getElementById('meta-strip');
+  const m = data.meta || {};
+
+  // Meta-Badges
+  const badges = [
+    { label: 'Follow-ups heute',    val: m.fups_heute,              cls: m.fups_heute > 0 ? 'alert' : 'ok' },
+    { label: 'Follow-ups Woche',    val: m.fups_woche,              cls: m.fups_woche > 2 ? 'warn' : '' },
+    { label: 'Kunden vernachlässigt', val: m.kunden_ohne_kontakt,   cls: m.kunden_ohne_kontakt > 0 ? 'warn' : 'ok' },
+    { label: 'Offene Angebote',     val: m.offene_angebote,         cls: m.offene_angebote > 0 ? 'warn' : 'ok' },
+    { label: 'Kalte Leads',         val: m.leads_kalt,              cls: m.leads_kalt > 3 ? 'alert' : '' },
+    { label: 'Skripte ohne Caption', val: m.skripte_ohne_beitrag,   cls: m.skripte_ohne_beitrag > 0 ? 'warn' : 'ok' },
+  ];
+  meta.innerHTML = badges.map(b => `
+    <div class="meta-badge ${b.cls}">
+      <span>${b.label}</span>
+      <span class="val">${b.val}</span>
+    </div>`).join('');
+  meta.style.display = 'flex';
+
+  // Karten aufbauen
+  const chancen    = (data.chancen || []).slice(0, 5);
+  const risiken    = (data.risiken || []).slice(0, 5);
+  const handlung   = (data.handlungsbedarf || []).slice(0, 5);
+
+  function bullets(items, bulletClass) {
+    if (!items.length) return `<span class="empty-hint">Keine Einträge gefunden.</span>`;
+    return `<ul class="item-list">${items.map(i => {
+      // Kundenname vor ":" fett
+      const txt = i.includes(':') ? i.replace(/^([^:]+):/, '<strong>$1:</strong>') : i;
+      return `<li><span class="bullet ${bulletClass}"></span><span>${txt}</span></li>`;
+    }).join('')}</ul>`;
+  }
+
+  grid.innerHTML = `
+    <!-- 1. Wichtigste Empfehlung (full width) -->
+    <div class="card full-width">
+      <div class="card-header">
+        <div class="card-icon gold">★</div>
+        <span class="card-title">Wichtigste Empfehlung</span>
+      </div>
+      <div class="card-body">
+        <div class="empfehlung-text">${esc(data.empfehlung || '—')}</div>
+      </div>
+    </div>
+
+    <!-- 2. Chancen -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon green">▲</div>
+        <span class="card-title">Chancen</span>
+      </div>
+      <div class="card-body">
+        ${bullets(chancen, 'bullet-green')}
+      </div>
+    </div>
+
+    <!-- 3. Risiken -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon red">▼</div>
+        <span class="card-title">Risiken</span>
+      </div>
+      <div class="card-body">
+        ${bullets(risiken, 'bullet-red')}
+      </div>
+    </div>
+
+    <!-- 4. Kunden mit Handlungsbedarf -->
+    <div class="card full-width">
+      <div class="card-header">
+        <div class="card-icon orange">◎</div>
+        <span class="card-title">Kunden mit Handlungsbedarf</span>
+      </div>
+      <div class="card-body">
+        ${bullets(handlung, 'bullet-orange')}
+      </div>
+    </div>
+
+    <!-- 5. Nächster sinnvoller Schritt -->
+    <div class="card full-width">
+      <div class="card-header">
+        <div class="card-icon blue">→</div>
+        <span class="card-title">Nächster sinnvoller Schritt</span>
+      </div>
+      <div class="card-body">
+        <div class="schritt-text">${esc(data.naechster_schritt || '—')}</div>
+      </div>
+    </div>`;
+}
+
+function esc(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+<script>
+(async function() {
+  try {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    if (!res.ok) { window.location.replace("/login"); return; }
+    const u = await res.json();
+    const nameEl = document.getElementById("me-name");
+    const avatarEl = document.getElementById("me-avatar");
+    if (nameEl) nameEl.textContent = u.vorname;
+    if (avatarEl) { avatarEl.textContent = (u.vorname?.[0]||"")+(u.nachname?.[0]||""); }
+  } catch { window.location.replace("/login"); }
+})();
+async function logout() {
+  await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+  window.location.replace("/login");
+}
+</script>
+</body>
+</html>

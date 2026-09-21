@@ -1,0 +1,16 @@
+{
+  "anthropic_api_key": "YOUR_ANTHROPIC_API_KEY",
+  "elevenlabs_api_key": "YOUR_ELEVENLABS_API_KEY",
+  "elevenlabs_voice_id": "YOUR_VOICE_ID",
+  "user_name": "YOUR_NAME",
+  "user_address": "Sir",
+  "city": "YOUR_CITY",
+  "workspace_path": "C:\\Users\\YOUR_USER\\Desktop\\jarvis_template",
+  "spotify_track": "spotify:track:YOUR_TRACK_ID",
+  "browser_url": "https://your-website.com",
+  "obsidian_inbox_path": "C:\\Users\\YOUR_USER\\path\\to\\obsidian\\inbox",
+  "apps": ["obsidian://open"],
+  "canva_client_id": "YOUR_CANVA_CLIENT_ID",
+  "canva_client_secret": "YOUR_CANVA_CLIENT_SECRET",
+  "canva_redirect_uri": "http://localhost:8340/canva/callback"
+}

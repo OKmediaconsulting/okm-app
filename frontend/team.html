@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/static/sw.js");</script>
+<title>Team — OK Media Consulting</title>
+<link rel="stylesheet" href="/static/okm.css">
+<style>
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+.user-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+}
+.user-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.avatar.manager { background: #7c3aed; }
+.avatar.employee { background: #059669; }
+.user-info h3 { font-size: 15px; font-weight: 600; color: var(--text); margin: 0 0 2px; }
+.user-info p  { font-size: 13px; color: var(--muted); margin: 0; }
+
+.user-meta {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.badge {
+  font-size: 11px; font-weight: 600; padding: 3px 8px;
+  border-radius: 20px; white-space: nowrap;
+}
+.badge-owner    { background: #eff6ff; color: #1d4ed8; }
+.badge-manager  { background: #f5f3ff; color: #6d28d9; }
+.badge-employee { background: #ecfdf5; color: #065f46; }
+.badge-active   { background: #ecfdf5; color: #065f46; }
+.badge-inactive { background: #fef2f2; color: #991b1b; }
+
+.user-card-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.btn-sm {
+  font-size: 12px; font-weight: 500; padding: 5px 12px;
+  border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+  cursor: pointer; transition: background 0.15s;
+}
+.btn-sm:hover { background: var(--bg); }
+.btn-sm.danger { color: #dc2626; border-color: #fecaca; }
+.btn-sm.danger:hover { background: #fef2f2; }
+
+/* Invite modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 24px;
+}
+.modal {
+  background: var(--surface); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+  width: 100%; max-width: 420px;
+  padding: 32px;
+}
+.modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.modal p  { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 5px; }
+.field input, .field select {
+  width: 100%; height: 42px; padding: 0 12px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 14px; color: var(--text); background: var(--surface); outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus, .field select:focus { border-color: var(--blue); }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.btn-cancel {
+  height: 40px; padding: 0 18px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--surface); color: var(--text);
+  font-size: 14px; cursor: pointer;
+}
+.btn-invite {
+  height: 40px; padding: 0 18px; background: var(--blue);
+  border: none; border-radius: 8px; color: #fff;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.btn-invite:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Invite link box */
+.invite-link-box {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px;
+  font-family: monospace; font-size: 12px; color: var(--text);
+  word-break: break-all; margin-top: 14px;
+}
+.copy-btn {
+  margin-top: 10px; width: 100%; height: 36px;
+  background: var(--blue); color: #fff; border: none;
+  border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+
+.error-msg {
+  background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;
+  border-radius: 8px; padding: 10px 14px; font-size: 13px;
+  margin-bottom: 14px; display: none;
+}
+.error-msg.show { display: block; }
+
+.empty-state {
+  text-align: center; padding: 48px 24px; color: var(--muted);
+}
+.empty-state svg { opacity: 0.3; margin-bottom: 12px; }
+
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.section-header h2 { font-size: 17px; font-weight: 700; }
+.btn-primary {
+  height: 38px; padding: 0 16px;
+  background: var(--blue); color: #fff; border: none;
+  border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+}
+
+#me-role { display: none; }
+</style>
+</head>
+<body>
+
+<div class="okm-topbar">
+  <div class="okm-topbar-left">
+    <div class="okm-logo-mark"><span>OK</span></div>
+    <nav class="okm-nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/crm">Kunden</a>
+      <a href="/skripte">Skripte</a>
+      <a href="/recherche">Recherche</a>
+      <a href="/team" class="active">Team</a>
+    </nav>
+  </div>
+  <div class="okm-topbar-right">
+    <span id="me-name" style="font-size:13px;color:var(--muted)"></span>
+    <button onclick="logout()" class="okm-avatar" title="Abmelden" style="border:none;cursor:pointer;background:var(--blue);color:#fff;font-weight:700;font-size:13px;">—</button>
+  </div>
+</div>
+
+<main class="okm-main">
+  <div class="section-header">
+    <h2>Team</h2>
+    <button class="btn-primary" id="btn-invite" onclick="openInvite()" style="display:none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Einladen
+    </button>
+  </div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:4px">Alle Mitglieder deiner Organisation</p>
+
+  <div class="team-grid" id="team-grid">
+    <div class="empty-state">Lade…</div>
+  </div>
+</main>
+
+<!-- Invite Modal -->
+<div class="modal-backdrop" id="invite-modal" style="display:none" onclick="closeInviteOnBackdrop(event)">
+  <div class="modal">
+    <h2>Mitarbeiter einladen</h2>
+    <p>Sende einen Einladungslink an einen neuen Mitarbeiter.</p>
+    <div class="error-msg" id="invite-err"></div>
+
+    <div id="invite-form-area">
+      <div class="field">
+        <label>E-Mail-Adresse</label>
+        <input type="email" id="inv-email" placeholder="name@okmediaconsulting.net" required>
+      </div>
+      <div class="field">
+        <label>Rolle</label>
+        <select id="inv-role">
+          <option value="manager">Manager</option>
+          <option value="employee" selected>Mitarbeiter</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeInvite()">Abbrechen</button>
+        <button class="btn-invite" id="btn-send-invite" onclick="sendInvite()">Einladung erstellen</button>
+      </div>
+    </div>
+
+    <div id="invite-link-area" style="display:none">
+      <p style="color:var(--text)">Einladungslink erstellt. Kopiere ihn und sende ihn an die Person:</p>
+      <div class="invite-link-box" id="invite-link-text"></div>
+      <button class="copy-btn" onclick="copyLink()">Link kopieren</button>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="btn-cancel" onclick="closeInvite()">Schließen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentUser = null;
+
+async function init() {
+  try {
+    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    if (!res.ok) { window.location.replace('/login'); return; }
+    currentUser = await res.json();
+    document.getElementById('me-name').textContent = currentUser.vorname;
+    document.querySelector('.okm-avatar').textContent = (currentUser.vorname[0] + (currentUser.nachname?.[0] || '')).toUpperCase();
+
+    if (['owner','manager'].includes(currentUser.rolle) || currentUser.permissions.includes('users.invite')) {
+      document.getElementById('btn-invite').style.display = 'flex';
+    }
+    await loadTeam();
+  } catch {
+    window.location.replace('/login');
+  }
+}
+
+async function loadTeam() {
+  const res = await fetch('/api/auth/users', { credentials: 'include' });
+  if (!res.ok) return;
+  const users = await res.json();
+  renderTeam(users);
+}
+
+function avatarClass(rolle) {
+  if (rolle === 'owner' || rolle === 'manager') return 'manager';
+  return 'employee';
+}
+
+function initials(v, n) {
+  return ((v?.[0] || '') + (n?.[0] || '')).toUpperCase();
+}
+
+function roleLabel(r) {
+  return { owner: 'Geschäftsführer', manager: 'Manager', employee: 'Mitarbeiter' }[r] || r;
+}
+
+function renderTeam(users) {
+  const grid = document.getElementById('team-grid');
+  if (!users.length) {
+    grid.innerHTML = '<div class="empty-state">Noch keine Teammitglieder</div>';
+    return;
+  }
+
+  const canEdit = currentUser.permissions.includes('users.edit') || currentUser.rolle === 'owner';
+  const canDisable = currentUser.permissions.includes('users.disable') || currentUser.rolle === 'owner';
+
+  grid.innerHTML = users.map(u => {
+    const isMe = u.id === currentUser.id;
+    const aktionsButtons = !isMe && canEdit ? `
+      <button class="btn-sm" onclick="toggleStatus(${u.id}, '${u.status}')">
+        ${u.status === 'active' ? 'Deaktivieren' : 'Aktivieren'}
+      </button>` : '';
+
+    return `
+    <div class="user-card">
+      <div class="user-card-header">
+        <div class="avatar ${avatarClass(u.rolle_name)}">${initials(u.vorname, u.nachname)}</div>
+        <div class="user-info">
+          <h3>${esc(u.vorname)} ${esc(u.nachname)} ${isMe ? '<span style="font-size:11px;color:var(--muted)">(du)</span>' : ''}</h3>
+          <p>${esc(u.email)}</p>
+        </div>
+      </div>
+      <div class="user-meta">
+        <span class="badge badge-${u.rolle_name}">${roleLabel(u.rolle_name)}</span>
+        <span class="badge badge-${u.status}">${u.status === 'active' ? 'Aktiv' : 'Inaktiv'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        Zuletzt aktiv: ${u.letzter_login ? new Date(u.letzter_login + 'Z').toLocaleDateString('de') : 'Nie'}
+      </div>
+      <div class="user-card-actions">
+        ${aktionsButtons}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleStatus(uid, currentStatus) {
+  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  const label = newStatus === 'inactive' ? 'deaktivieren' : 'reaktivieren';
+  if (!confirm(`Diesen Benutzer wirklich ${label}?`)) return;
+
+  const res = await fetch(`/api/auth/users/${uid}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus }),
+    credentials: 'include'
+  });
+  if (res.ok) { await loadTeam(); }
+  else { alert('Fehler beim Ändern des Status'); }
+}
+
+function openInvite() {
+  document.getElementById('invite-modal').style.display = 'flex';
+  document.getElementById('invite-form-area').style.display = '';
+  document.getElementById('invite-link-area').style.display = 'none';
+  document.getElementById('invite-err').classList.remove('show');
+  document.getElementById('inv-email').value = '';
+  setTimeout(() => document.getElementById('inv-email').focus(), 50);
+}
+
+function closeInvite() {
+  document.getElementById('invite-modal').style.display = 'none';
+}
+
+function closeInviteOnBackdrop(e) {
+  if (e.target === document.getElementById('invite-modal')) closeInvite();
+}
+
+async function sendInvite() {
+  const email = document.getElementById('inv-email').value.trim();
+  const rolle = document.getElementById('inv-role').value;
+  const btn = document.getElementById('btn-send-invite');
+  const errEl = document.getElementById('invite-err');
+  errEl.classList.remove('show');
+
+  if (!email) return;
+  btn.disabled = true;
+  btn.textContent = 'Erstelle…';
+
+  try {
+    const res = await fetch('/api/auth/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, rolle }),
+      credentials: 'include'
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = data.detail || 'Fehler beim Erstellen der Einladung';
+      errEl.classList.add('show');
+      return;
+    }
+    document.getElementById('invite-link-text').textContent = data.invite_url;
+    document.getElementById('invite-form-area').style.display = 'none';
+    document.getElementById('invite-link-area').style.display = '';
+  } catch {
+    errEl.textContent = 'Verbindungsfehler';
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Einladung erstellen';
+  }
+}
+
+function copyLink() {
+  const text = document.getElementById('invite-link-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Kopiert ✓';
+    setTimeout(() => btn.textContent = 'Link kopieren', 2000);
+  });
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.replace('/login');
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+init();
+</script>
+</body>
+</html>

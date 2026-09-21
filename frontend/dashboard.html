@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/static/sw.js");</script>
+<title>OK Media — Dashboard</title>
+<link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+<link rel="stylesheet" href="/static/okm.css">
+<style>
+body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+/* ── GRID ── */
+#hud {
+  display: grid;
+  grid-template-rows: 1fr 220px 40px;
+  grid-template-columns: 300px 1fr 1fr;
+  flex: 1; overflow: hidden;
+  gap: 1px;
+  background: var(--border);
+}
+
+/* ── ALL PANELS ── */
+.panel {
+  background: var(--surface);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; background: var(--surface);
+}
+.panel-title {
+  font-size: 11px; font-weight: 700; color: var(--text-2);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.panel-badge {
+  font-size: 11px; color: var(--text-3);
+}
+.panel-body {
+  flex: 1; overflow-y: auto; padding: 0;
+}
+
+/* ── FOLLOW-UPS SIDEBAR ── */
+#panel-fup { grid-column: 1; grid-row: 1; }
+
+.crm-stats {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.crm-stat {
+  flex: 1; padding: 12px; text-align: center;
+  border-right: 1px solid var(--border);
+}
+.crm-stat:last-child { border-right: none; }
+.crm-stat-num {
+  font-size: 22px; font-weight: 700; color: var(--text);
+  display: block; line-height: 1.1;
+}
+.crm-stat-lbl { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+
+.fup-item {
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.12s;
+}
+.fup-item:hover { background: var(--surface-2); }
+.fup-item:last-child { border-bottom: none; }
+.fup-firma {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fup-titel { font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+.fup-meta { display: flex; align-items: center; justify-content: space-between; }
+.fup-datum { font-size: 11px; }
+.fup-datum.overdue { color: var(--red); }
+.fup-datum.today   { color: var(--orange); }
+.fup-datum.future  { color: var(--text-3); }
+.fup-done-btn {
+  font-size: 11px; padding: 2px 7px; border-radius: 4px;
+  border: 1px solid var(--border-med); background: transparent;
+  color: var(--text-2); cursor: pointer; transition: all 0.12s; font-family: inherit;
+}
+.fup-done-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+
+/* ── GMAIL PANEL ── */
+#panel-gmail { grid-column: 2; grid-row: 1; }
+
+.email-item {
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  transition: background 0.12s; cursor: default;
+}
+.email-item:hover { background: var(--surface-2); }
+.email-item:last-child { border-bottom: none; }
+.email-row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+.email-from { font-size: 12px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.email-date { font-size: 11px; color: var(--text-3); flex-shrink: 0; }
+.email-subject { font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
+.email-snippet { font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── CALENDAR PANEL ── */
+#panel-cal { grid-column: 3; grid-row: 1; }
+
+.cal-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+}
+.cal-item:last-child { border-bottom: none; }
+.cal-time { font-size: 12px; font-weight: 700; color: var(--blue); min-width: 42px; flex-shrink: 0; padding-top: 1px; }
+.cal-title { font-size: 12px; color: var(--text); line-height: 1.4; }
+
+/* ── HEUTE WICHTIG ── */
+#panel-heute { grid-column: 1 / -1; grid-row: 2; flex-direction: row; }
+
+.heute-karten {
+  display: flex; gap: 0; flex: 1; overflow: hidden;
+}
+.hw-card {
+  flex: 1; padding: 14px 16px; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 6px; overflow: hidden;
+}
+.hw-card:last-child { border-right: none; }
+.hw-card-head { display: flex; align-items: center; gap: 6px; }
+.hw-card-icon { font-size: 14px; }
+.hw-card-titel { font-size: 11px; font-weight: 700; color: var(--text-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hw-card-tag { font-size: 10px; font-weight: 600; color: var(--blue); background: var(--blue-bg); padding: 1px 6px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.hw-card-inhalt { font-size: 12px; color: var(--text); line-height: 1.5; flex: 1; overflow: hidden; }
+
+.heute-rec {
+  width: 220px; flex-shrink: 0; padding: 14px 16px;
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.heute-rec-label { font-size: 10px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; }
+.heute-rec-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+.heute-loading { display: flex; align-items: center; justify-content: center; flex: 1; font-size: 12px; color: var(--text-3); }
+
+/* ── STATUSBAR ── */
+#statusbar {
+  grid-column: 1 / -1; grid-row: 3;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; font-size: 11px; color: var(--text-3);
+}
+.sb-indicators { display: flex; gap: 16px; align-items: center; }
+.sb-item { display: flex; align-items: center; gap: 5px; }
+.sb-version { font-weight: 600; color: var(--text-3); }
+
+/* ── QUICK NAV ── */
+.quick-nav {
+  display: flex; align-items: center; gap: 6px;
+}
+.quick-nav a {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 4px;
+  font-size: 11px; font-weight: 500; color: var(--text-2);
+  text-decoration: none; border: 1px solid var(--border);
+  transition: all 0.12s; white-space: nowrap;
+}
+.quick-nav a:hover { color: var(--text); border-color: var(--border-med); background: var(--surface-2); }
+
+/* ── ERROR STATE ── */
+.panel-error { padding: 20px 16px; font-size: 12px; color: var(--red); }
+.panel-loading { padding: 20px 16px; font-size: 12px; color: var(--text-3); }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="okm-topbar">
+  <a class="okm-logo" href="/dashboard"><span class="logo-ok">OK</span> Media Consulting</a>
+  <div class="okm-nav">
+    <a href="/dashboard" class="active">Dashboard</a>
+    <a href="/crm">CRM</a>
+    <a href="/skripte">Skripte</a>
+    <a href="/recherche">Recherche</a>
+    <a href="/denkt-mit">Denkt mit</a>
+  </div>
+  <div class="okm-topbar-right">
+    <div id="clock" style="font-size:14px;font-weight:700;color:var(--text);letter-spacing:-0.5px">—:—</div>
+    <div id="date-disp" style="font-size:11px;color:var(--text-2)">—</div>
+    <div id="weather-box" style="font-size:11px;color:var(--text-2);margin-left:8px"><span id="weather-temp">—°C</span> <span id="weather-desc"></span></div>
+    <span class="nav-sep" style="margin-left:8px"></span>
+    <a href="/systemgesundheit" style="color:var(--text-3)">System</a>
+    <span class="nav-sep"></span>
+    <span id="me-name" style="font-size:12px;color:var(--text-2)"></span>
+    <button id="me-avatar" onclick="logout()" title="Abmelden"
+      style="width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0">?</button>
+  </div>
+</nav>
+
+<!-- HUD GRID -->
+<div id="hud">
+
+<!-- FOLLOW-UPS SIDEBAR -->
+<div class="panel" id="panel-fup">
+  <div class="panel-header">
+    <div class="panel-title">Follow-ups & CRM</div>
+    <a href="/crm" class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px">→ CRM</a>
+  </div>
+  <div class="crm-stats">
+    <div class="crm-stat"><span class="crm-stat-num" id="crm-stat-gesamt">—</span><div class="crm-stat-lbl">Gesamt</div></div>
+    <div class="crm-stat"><span class="crm-stat-num" id="crm-stat-kunden" style="color:var(--green)">—</span><div class="crm-stat-lbl">Kunden</div></div>
+    <div class="crm-stat"><span class="crm-stat-num" id="crm-stat-fup" style="color:var(--orange)">—</span><div class="crm-stat-lbl">Fällig</div></div>
+  </div>
+  <div class="panel-body" id="fup-list">
+    <div class="panel-loading">Lade Follow-ups…</div>
+  </div>
+</div>
+
+<!-- GMAIL -->
+<div class="panel" id="panel-gmail">
+  <div class="panel-header">
+    <div class="panel-title">Gmail · Posteingang</div>
+    <span class="panel-badge" id="email-count"></span>
+  </div>
+  <div class="panel-body" id="email-list">
+    <div class="panel-loading">Lade E-Mails…</div>
+  </div>
+</div>
+
+<!-- KALENDER -->
+<div class="panel" id="panel-cal">
+  <div class="panel-header">
+    <div class="panel-title">Kalender · Heute</div>
+    <span class="panel-badge" id="event-count"></span>
+  </div>
+  <div class="panel-body" id="cal-list">
+    <div class="panel-loading">Lade Termine…</div>
+  </div>
+</div>
+
+<!-- HEUTE WICHTIG -->
+<div class="panel" id="panel-heute">
+  <div class="panel-header" style="border-right:1px solid var(--border);flex-shrink:0">
+    <div class="panel-title">Heute wichtig</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="panel-badge" id="heute-datum"></span>
+      <button onclick="loadHeuteWichtig(true)" class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px">↻ Neu</button>
+    </div>
+  </div>
+  <div id="heute-body" style="display:flex;flex:1;overflow:hidden">
+    <div class="heute-loading">Lade Tagesinfos…</div>
+  </div>
+</div>
+
+<!-- STATUSBAR -->
+<div id="statusbar">
+  <div class="sb-indicators">
+    <div class="sb-item"><div class="status-dot" id="dot-gmail"></div><span>Gmail</span></div>
+    <div class="sb-item"><div class="status-dot" id="dot-cal"></div><span>Kalender</span></div>
+    <div class="sb-item"><div class="status-dot green"></div><span>Claude API</span></div>
+  </div>
+  <div class="quick-nav">
+    <a href="/crm">CRM</a>
+    <a href="/skripte">Skripte</a>
+    <a href="/recherche">Recherche</a>
+    <a href="/denkt-mit">Denkt mit</a>
+  </div>
+  <div class="sb-version">OK Media Consulting · v4.0</div>
+</div>
+
+</div><!-- #hud -->
+
+<script>
+// ── Helpers ──────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function setDot(id, cls) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'status-dot ' + cls;
+}
+
+// ── Clock ────────────────────────────────────────────
+function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+}
+setInterval(tick, 1000); tick();
+
+// ── Auth init ────────────────────────────────────────
+async function initAuth() {
+  try {
+    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    if (!res.ok) { window.location.replace('/login'); return; }
+    const u = await res.json();
+    document.getElementById('me-name').textContent = u.vorname;
+    document.getElementById('me-avatar').textContent =
+      (u.vorname?.[0] || '') + (u.nachname?.[0] || '');
+  } catch { window.location.replace('/login'); }
+}
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.replace('/login');
+}
+initAuth();
+
+// ── Dashboard API ────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await fetch('/api/dashboard').then(r => r.json());
+    if (d.date) document.getElementById('date-disp').textContent = d.date;
+    if (d.weather) {
+      document.getElementById('weather-temp').textContent = d.weather.temp + '°C';
+      document.getElementById('weather-desc').textContent = d.weather.description || '';
+    }
+    renderEmails(d.emails || [], d.emails_error);
+    renderCalendar(d.events || [], d.events_error);
+    setDot('dot-gmail', d.emails !== undefined ? 'green' : 'red');
+    setDot('dot-cal',   d.events !== undefined ? 'green' : 'red');
+  } catch(e) { console.error('Dashboard error:', e); }
+}
+
+// ── Gmail ────────────────────────────────────────────
+function renderEmails(emails, error) {
+  const el = document.getElementById('email-list');
+  document.getElementById('email-count').textContent = emails.length ? emails.length + ' Mails' : '';
+  if (error) { el.innerHTML = `<div class="panel-error">Fehler: ${esc(error)}</div>`; setDot('dot-gmail','red'); return; }
+  if (!emails.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">✉</div><div class="empty-title">Keine E-Mails</div></div>'; return; }
+  el.innerHTML = emails.map(e => {
+    const fromName = e.from.replace(/<[^>]+>/g,'').replace(/"/g,'').trim() || e.from;
+    const dateShort = e.date ? e.date.replace(/\s*\(.*\)/,'').trim() : '';
+    return `<div class="email-item">
+      <div class="email-row1"><span class="email-from">${esc(fromName)}</span><span class="email-date">${esc(dateShort)}</span></div>
+      <div class="email-subject">${esc(e.subject)}</div>
+      <div class="email-snippet">${esc(e.snippet.replace(/\n/g,' ').substring(0,120))}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Calendar ─────────────────────────────────────────
+function renderCalendar(events, error) {
+  const el = document.getElementById('cal-list');
+  document.getElementById('event-count').textContent = events.length ? events.length + ' Termine' : '';
+  if (error) { el.innerHTML = `<div class="panel-error">Fehler: ${esc(error)}</div>`; setDot('dot-cal','red'); return; }
+  if (!events.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">Keine Termine heute</div></div>'; return; }
+  el.innerHTML = events.map(ev => {
+    let timeStr = '';
+    const m = ev.start.match(/(\d{1,2}):(\d{2}):\d{2}\s*(AM|PM)?/i);
+    if (m) {
+      let h = parseInt(m[1]); const min = m[2];
+      if (m[3]) { if (m[3].toUpperCase()==='PM'&&h<12) h+=12; if (m[3].toUpperCase()==='AM'&&h===12) h=0; }
+      timeStr = String(h).padStart(2,'0') + ':' + min;
+    } else { timeStr = ev.start.substring(0,5); }
+    return `<div class="cal-item"><div class="cal-time">${esc(timeStr)}</div><div class="cal-title">${esc(ev.title)}</div></div>`;
+  }).join('');
+}
+
+// ── Heute Wichtig ─────────────────────────────────────
+async function loadHeuteWichtig(force) {
+  const body = document.getElementById('heute-body');
+  body.innerHTML = '<div class="heute-loading">Lade Tagesinfos…</div>';
+  try {
+    const url = force ? '/api/heute-wichtig?refresh=1' : '/api/heute-wichtig';
+    const d = await fetch(url).then(r => r.json());
+    renderHeuteWichtig(d);
+  } catch(e) {
+    body.innerHTML = '<div class="heute-loading" style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+function renderHeuteWichtig(d) {
+  const body = document.getElementById('heute-body');
+  const heute = new Date();
+  const wt = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const mo = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  const dateEl = document.getElementById('heute-datum');
+  if (dateEl) dateEl.textContent = wt[heute.getDay()] + ', ' + heute.getDate() + '. ' + mo[heute.getMonth()];
+
+  const karten = (d.karten || []).map(k => `
+    <div class="hw-card">
+      <div class="hw-card-head">
+        <span class="hw-card-icon">${esc(k.icon)}</span>
+        <span class="hw-card-titel">${esc(k.titel)}</span>
+        <span class="hw-card-tag">${esc(k.tag)}</span>
+      </div>
+      <div class="hw-card-inhalt">${esc(k.inhalt)}</div>
+    </div>`).join('');
+
+  body.innerHTML = `
+    <div class="heute-karten">${karten}</div>
+    <div class="heute-rec">
+      <div class="heute-rec-label">Empfehlung</div>
+      <div class="heute-rec-text">${esc(d.empfehlung || '—')}</div>
+    </div>`;
+}
+
+// ── CRM Follow-ups ────────────────────────────────────
+async function loadCrmPanel() {
+  try {
+    const [stats, fups] = await Promise.all([
+      fetch('/api/crm/stats').then(r => r.json()),
+      fetch('/api/crm/followups/heute').then(r => r.json()),
+    ]);
+    document.getElementById('crm-stat-gesamt').textContent = stats.gesamt ?? 0;
+    document.getElementById('crm-stat-kunden').textContent = stats.kunden ?? 0;
+    document.getElementById('crm-stat-fup').textContent    = stats.follow_ups_heute ?? 0;
+
+    const list = document.getElementById('fup-list');
+    const heute = new Date().toISOString().substring(0,10);
+    if (!fups.length) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-title">Keine fälligen Follow-ups</div><div class="empty-sub">Alles erledigt</div></div>';
+      return;
+    }
+    list.innerHTML = fups.map(f => {
+      const cls = f.faellig_am < heute ? 'overdue' : f.faellig_am === heute ? 'today' : 'future';
+      return `<div class="fup-item">
+        <div class="fup-firma">${esc(f.firma)}</div>
+        <div class="fup-titel">${esc(f.titel)}</div>
+        <div class="fup-meta">
+          <span class="fup-datum ${cls}">${f.faellig_am}</span>
+          <button class="fup-done-btn" onclick="crmFupDone(${f.id},event)">✓ Erledigt</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { console.warn('CRM load error:', e); }
+}
+
+async function crmFupDone(fid, ev) {
+  ev.stopPropagation();
+  await fetch(`/api/crm/followup/${fid}/erledigt`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+  loadCrmPanel();
+}
+
+// ── Init ──────────────────────────────────────────────
+loadDashboard();
+loadHeuteWichtig();
+loadCrmPanel();
+setInterval(loadDashboard, 5*60*1000);
+setInterval(loadCrmPanel, 60*1000);
+</script>
+</body>
+</html>

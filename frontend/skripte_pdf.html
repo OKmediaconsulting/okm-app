@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Skripte — OK Media Consulting</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family:'Inter', -apple-system, Helvetica, Arial, sans-serif;
+    background:#fff;
+    color:#1a1a1a;
+    font-size:11pt;
+    line-height:1.6;
+  }
+
+  /* ── SCREEN: Toolbar ── */
+  @media screen {
+    #toolbar {
+      position:fixed; top:0; left:0; right:0; z-index:100;
+      background:#0d1117; border-bottom:1px solid #2a3a50;
+      padding:12px 24px; display:flex; align-items:center; gap:12px;
+    }
+    #toolbar .logo { color:#e6edf3; font-size:14px; font-weight:600; flex:1; }
+    #toolbar button {
+      padding:8px 20px; border:none; border-radius:5px;
+      font-family:inherit; font-size:13px; cursor:pointer; font-weight:500;
+    }
+    #toolbar .btn-print { background:#58a6ff; color:#fff; }
+    #toolbar .btn-back  { background:#1c2230; color:#8b949e; border:1px solid #2a3a50; }
+    #toolbar .btn-print:hover { background:#1f6feb; }
+    #toolbar .btn-back:hover  { color:#e6edf3; }
+    #content { margin-top:56px; }
+    .page { max-width:800px; margin:32px auto; padding:48px 64px; box-shadow:0 2px 24px rgba(0,0,0,.12); background:#fff; }
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    #toolbar { display:none !important; }
+    #content { margin:0; }
+    .page { padding:20mm 22mm; max-width:none; box-shadow:none; }
+    .skript-block { page-break-inside:avoid; }
+    .page-break { page-break-before:always; }
+  }
+
+  /* ── DECKBLATT ── */
+  .cover { padding-bottom:48px; border-bottom:1px solid #e5e5e5; margin-bottom:48px; }
+  .cover-agency { font-size:9pt; font-weight:600; color:#999; letter-spacing:2px; text-transform:uppercase; margin-bottom:32px; }
+  .cover-title { font-size:28pt; font-weight:700; color:#1a1a1a; line-height:1.2; margin-bottom:12px; }
+  .cover-sub { font-size:13pt; color:#555; font-weight:400; }
+  .cover-meta { margin-top:32px; display:flex; gap:32px; }
+  .cover-meta-item { }
+  .cover-meta-label { font-size:8pt; font-weight:600; color:#999; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .cover-meta-value { font-size:11pt; color:#333; font-weight:500; }
+
+  /* ── STRATEGIE ── */
+  .strategie-block {
+    background:#f8f8f8; border-left:3px solid #1a1a1a;
+    padding:20px 24px; margin-bottom:48px; border-radius:0 4px 4px 0;
+  }
+  .strategie-label { font-size:8pt; font-weight:700; color:#999; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:8px; }
+  .strategie-text { font-size:10.5pt; color:#333; line-height:1.7; font-style:italic; }
+
+  /* ── SKRIPT BLOCK ── */
+  .skript-block { margin-bottom:56px; }
+  .skript-divider {
+    display:flex; align-items:center; gap:16px;
+    margin-bottom:28px;
+  }
+  .skript-num { font-size:9pt; font-weight:700; color:#999; letter-spacing:2px; text-transform:uppercase; white-space:nowrap; }
+  .skript-divider-line { flex:1; height:1px; background:#e5e5e5; }
+
+  .skript-titel { font-size:18pt; font-weight:700; color:#1a1a1a; margin-bottom:20px; line-height:1.2; }
+
+  .skript-section-label { font-size:8pt; font-weight:700; color:#999; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:8px; }
+
+  .hook-box {
+    border:1px solid #1a1a1a; padding:14px 20px;
+    margin-bottom:24px; background:#fff;
+  }
+  .hook-text { font-size:12pt; font-weight:500; color:#1a1a1a; font-style:italic; line-height:1.5; }
+
+  .skript-text {
+    font-size:11pt; color:#1a1a1a; line-height:2;
+    white-space:pre-wrap; margin-bottom:24px;
+    font-weight:400;
+  }
+
+  .cta-box {
+    background:#1a1a1a; color:#fff;
+    padding:12px 20px; display:inline-block;
+    font-size:10.5pt; font-weight:500;
+  }
+
+  .dreh-box {
+    margin-top:16px; padding:10px 16px;
+    background:#f5f5f5; border-radius:3px;
+    font-size:9.5pt; color:#666;
+  }
+  .dreh-label { font-weight:600; color:#999; margin-right:6px; }
+
+  /* ── FOOTER ── */
+  .pdf-footer {
+    margin-top:48px; padding-top:24px; border-top:1px solid #e5e5e5;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .footer-logo { font-size:9pt; font-weight:600; color:#999; letter-spacing:1px; text-transform:uppercase; }
+  .footer-copy { font-size:8.5pt; color:#bbb; }
+
+  /* Loading */
+  #loading { text-align:center; padding:80px; color:#999; font-size:14px; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div class="logo">✦ OK Media Consulting · Skript-PDF</div>
+  <button class="btn-back" onclick="history.back()">← Zurück</button>
+  <button class="btn-print" onclick="window.print()">🖨 Als PDF speichern</button>
+</div>
+
+<div id="content">
+  <div id="loading">Skripte werden geladen…</div>
+  <div id="page" style="display:none"></div>
+</div>
+
+<script>
+const MONATE = ["","Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function monatLabel(m) {
+  const [jahr, mon] = m.split('-');
+  return `${MONATE[parseInt(mon)]} ${jahr}`;
+}
+
+async function load() {
+  const batchId = location.pathname.split('/').pop();
+  const r = await fetch(`/api/skripte/batch/${batchId}`);
+  const d = await r.json();
+
+  document.title = `${d.kunde.name} · ${monatLabel(d.monat)} · OK Media Consulting`;
+
+  const page = document.getElementById('page');
+  page.className = 'page';
+
+  const skripteHtml = d.skripte.map((s, i) => `
+    <div class="skript-block">
+      <div class="skript-divider">
+        <span class="skript-num">Skript ${s.position}</span>
+        <div class="skript-divider-line"></div>
+      </div>
+
+      <div class="skript-titel">${esc(s.titel)}</div>
+
+      <div class="skript-section-label">Hook</div>
+      <div class="hook-box">
+        <div class="hook-text">${esc(s.hook)}</div>
+      </div>
+
+      <div class="skript-section-label">Skript</div>
+      <div class="skript-text">${esc(s.skript)}</div>
+
+      <div class="skript-section-label">Call to Action</div>
+      <div class="cta-box">${esc(s.cta)}</div>
+
+      ${s.drehhinweis ? `<div class="dreh-box"><span class="dreh-label">Drehhinweis:</span>${esc(s.drehhinweis)}</div>` : ''}
+    </div>
+    ${i < d.skripte.length - 1 ? '<div class="skript-divider" style="margin-top:0"><div class="skript-divider-line" style="background:#ddd"></div></div>' : ''}
+  `).join('\n');
+
+  page.innerHTML = `
+    <div class="cover">
+      <div class="cover-agency">OK Media Consulting</div>
+      <div class="cover-title">${esc(d.kunde.name)}</div>
+      <div class="cover-sub">Social Media Reel-Skripte · ${monatLabel(d.monat)}</div>
+      <div class="cover-meta">
+        <div class="cover-meta-item">
+          <div class="cover-meta-label">Branche</div>
+          <div class="cover-meta-value">${esc(d.kunde.branche)}</div>
+        </div>
+        <div class="cover-meta-item">
+          <div class="cover-meta-label">Standort</div>
+          <div class="cover-meta-value">${esc(d.kunde.standort)}</div>
+        </div>
+        <div class="cover-meta-item">
+          <div class="cover-meta-label">Skripte</div>
+          <div class="cover-meta-value">${d.skripte.length} Reels</div>
+        </div>
+        <div class="cover-meta-item">
+          <div class="cover-meta-label">Posting</div>
+          <div class="cover-meta-value">${esc(d.kunde.postingrhythmus || 'Dienstag 18:00 Uhr')}</div>
+        </div>
+      </div>
+    </div>
+
+    ${d.strategie ? `
+    <div class="strategie-block">
+      <div class="strategie-label">Monatsstrategie</div>
+      <div class="strategie-text">${esc(d.strategie)}</div>
+    </div>` : ''}
+
+    ${skripteHtml}
+
+    <div class="pdf-footer">
+      <div class="footer-logo">OK Media Consulting</div>
+      <div class="footer-copy">OK Media Consulting · Vertraulich</div>
+    </div>
+  `;
+
+  document.getElementById('loading').style.display = 'none';
+  page.style.display = 'block';
+}
+
+load();
+</script>
+</body>
+</html>

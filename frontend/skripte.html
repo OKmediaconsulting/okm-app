@@ -1,0 +1,2572 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/static/sw.js");</script>
+<title>OK Media — Skripte</title>
+<link rel="stylesheet" href="/static/okm.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f4f6f8;
+    --panel: #ffffff;
+    --panel2: #f9fafb;
+    --border: #e5e7eb;
+    --accent: #2563eb;
+    --accent2: #1d4ed8;
+    --green: #16a34a;
+    --orange: #d97706;
+    --red: #dc2626;
+    --text: #111827;
+    --text2: #6b7280;
+    --text3: #9ca3af;
+    --font: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 100;
+    gap: 12px;
+  }
+  .topbar-logo {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.2px;
+    margin-right: auto;
+  }
+  .topbar-logo span { color: var(--accent); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--panel2); color: var(--text); border-color: var(--accent); }
+  .btn-primary {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: #fff;
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: rgba(248,81,73,0.1); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-icon { padding: 5px 8px; border-radius: 5px; }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: flex;
+    height: 100vh;
+    padding-top: 52px;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-search {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-input {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input::placeholder { color: var(--text3); }
+  .search-input:focus { border-color: var(--accent); }
+
+  .customer-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .customer-list::-webkit-scrollbar { width: 4px; }
+  .customer-list::-webkit-scrollbar-track { background: transparent; }
+  .customer-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .customer-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .customer-item:hover { background: var(--panel2); }
+  .customer-item.active {
+    background: rgba(88,166,255,0.08);
+    border-left-color: var(--accent);
+  }
+  .customer-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .customer-info { flex: 1; min-width: 0; }
+  .customer-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .location-badge {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 1px;
+  }
+
+  .sidebar-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text3);
+    font-size: 13px;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .main::-webkit-scrollbar { width: 6px; }
+  .main::-webkit-scrollbar-track { background: transparent; }
+  .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--text3);
+  }
+  .empty-icon {
+    font-size: 48px;
+    color: var(--text3);
+    opacity: 0.4;
+  }
+  .empty-state h2 { font-size: 18px; font-weight: 500; color: var(--text2); }
+  .empty-state p { font-size: 13px; }
+
+  /* ── CUSTOMER HEADER ── */
+  .customer-header {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .customer-header-info { flex: 1; }
+  .customer-header-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .customer-header-meta {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+  .customer-header-meta span { color: var(--text3); margin: 0 4px; }
+  .customer-header-actions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+
+  /* ── GENERATE BOX ── */
+  .generate-box {
+    margin: 20px 28px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .generate-box-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  .generate-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .select-field, .input-field {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .select-field:focus, .input-field:focus { border-color: var(--accent); }
+  .select-field { padding-right: 28px; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b949e'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  .year-input { width: 80px; }
+  /* ── THEMEN-BUTTON ── */
+  .btn-themen {
+    background: transparent;
+    border: 1px solid rgba(88,166,255,0.3);
+    color: var(--accent);
+    padding: 7px 13px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-themen:hover,
+  .btn-themen.active {
+    background: rgba(88,166,255,0.1);
+    border-color: var(--accent);
+  }
+
+  /* ── THEMEN-BOX ── */
+  .themen-box {
+    margin-top: 12px;
+    background: rgba(88,166,255,0.04);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    animation: fadeSlideDown 0.2s ease;
+  }
+  @keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .themen-box-header { margin-bottom: 10px; }
+  .themen-box-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--accent); display: block; margin-bottom: 3px;
+  }
+  .themen-box-hint {
+    font-size: 11px; color: var(--text2); display: block; line-height: 1.4;
+  }
+  .themen-textarea {
+    width: 100%; background: var(--panel2);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 9px 12px; color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    line-height: 1.5; outline: none; resize: vertical;
+    transition: border-color 0.15s;
+  }
+  .themen-textarea:focus { border-color: var(--accent); }
+  .themen-textarea::placeholder { color: var(--text2); opacity: 0.6; }
+  .themen-tags {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 0;
+  }
+  .themen-tag {
+    font-size: 11px; color: var(--accent);
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.25);
+    border-radius: 20px; padding: 2px 10px;
+    white-space: nowrap;
+  }
+
+  .warning-box {
+    margin-top: 12px;
+    background: rgba(210,153,34,0.1);
+    border: 1px solid rgba(210,153,34,0.3);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--orange);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .error-box {
+    margin-top: 12px;
+    background: rgba(248,81,73,0.1);
+    border: 1px solid rgba(248,81,73,0.3);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--red);
+  }
+
+  /* ── STRATEGIE BLOCK ── */
+  .strategie-block {
+    margin: 0 28px 4px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+  }
+  .strategie-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+  .strategie-text {
+    font-size: 13px;
+    color: var(--text2);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  /* ── HISTORY ── */
+  .history-section { padding: 4px 28px 28px; }
+  .history-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 14px;
+    margin-top: 8px;
+  }
+
+  .batch-group { margin-bottom: 24px; }
+  .batch-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .batch-label-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .batch-label-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .batch-actions { margin-left: auto; display: flex; gap: 6px; }
+
+  .script-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .script-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .script-card:hover { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(88,166,255,0.15); }
+  .script-card-pos {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .script-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .script-card-hook {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .script-card-actions { display: flex; gap: 6px; margin-top: 4px; }
+
+  /* ── LOADING OVERLAY ── */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(13,17,23,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 50;
+    backdrop-filter: blur(2px);
+  }
+  .spinner-icon {
+    font-size: 36px;
+    color: var(--accent);
+    animation: spin 1.4s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .loading-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .loading-sub {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  /* ── MODAL BACKDROP ── */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(3px);
+  }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal::-webkit-scrollbar { width: 4px; }
+  .modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .modal-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    background: var(--panel);
+    z-index: 1;
+  }
+  .modal-title { font-size: 16px; font-weight: 600; flex: 1; }
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .modal-close:hover { background: var(--panel2); color: var(--text); }
+  .modal-body { padding: 20px 22px; flex: 1; }
+  .modal-footer {
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* ── SCRIPT VIEWER MODAL ── */
+  .viewer-modal { max-width: 700px; }
+  .script-field { margin-bottom: 18px; }
+  .script-field-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+  .script-field-value {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+  .hook-value {
+    background: rgba(88,166,255,0.07);
+    border-color: rgba(88,166,255,0.25);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ── BEITRAG & STORY ── */
+  .bs-section {
+    margin-top: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+  .bs-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bs-section-title::before {
+    content: '';
+    width: 4px; height: 16px;
+    background: var(--orange);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .bs-field { margin-bottom: 14px; }
+  .bs-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .bs-field-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+  .bs-copy-btn {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .bs-copy-btn:hover { background: var(--panel2); color: var(--text); border-color: var(--accent); }
+  .bs-copy-btn.copied { color: var(--green); border-color: var(--green); }
+  .bs-value {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    min-height: 40px;
+  }
+  .bs-story-value {
+    background: rgba(210,153,34,0.07);
+    border-color: rgba(210,153,34,0.25);
+    color: var(--orange);
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .bs-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text2);
+    font-size: 13px;
+    padding: 12px 0;
+  }
+  .bs-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  .bs-generate-btn {
+    background: rgba(210,153,34,0.12);
+    border: 1px solid rgba(210,153,34,0.35);
+    color: var(--orange);
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .bs-generate-btn:hover { background: rgba(210,153,34,0.2); border-color: var(--orange); }
+  .bs-generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── CUSTOMER FORM ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 18px;
+  }
+  .form-full { grid-column: 1 / -1; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .form-label .req { color: var(--red); margin-left: 2px; }
+  .form-input, .form-textarea, .form-select {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--accent); }
+  .form-input.error, .form-textarea.error { border-color: var(--red); }
+  .form-textarea { resize: vertical; min-height: 72px; }
+  .form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b949e'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  .form-error { font-size: 12px; color: var(--red); margin-top: -10px; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 18px 0;
+  }
+
+  /* ── UTILS ── */
+  .hidden { display: none !important; }
+  .mt-4 { margin-top: 4px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+
+  /* ── TABS ── */
+  .customer-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 12px;
+    background: var(--panel);
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .customer-tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── EINZELSKRIPT ── */
+  .einzelskript-box {
+    margin: 20px 28px 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .einzelskript-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 12px;
+  }
+  .einzelskript-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .einzelskript-result {
+    margin-top: 20px;
+    background: rgba(88,166,255,0.05);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .es-struktur-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-bottom: 10px;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── INSTAGRAM ── */
+  .instagram-box {
+    margin: 20px 28px 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .instagram-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 12px;
+  }
+  .ig-posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .ig-post-card {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .ig-post-header {
+    padding: 12px 14px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ig-post-format {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .ig-post-thema {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .ig-slides {
+    padding: 10px 14px;
+  }
+  .ig-slide {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .ig-slide:last-child { border-bottom: none; }
+  .ig-slide-nr { font-size: 10px; font-weight: 700; color: var(--accent); margin-bottom: 3px; letter-spacing: 0.5px; }
+  .ig-slide-headline { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .ig-slide-text { font-size: 12px; color: var(--text2); }
+  .ig-slide-visual { font-size: 11px; color: var(--text3); font-style: italic; margin-top: 3px; }
+  .ig-caption-box {
+    padding: 10px 14px;
+    background: rgba(88,166,255,0.04);
+    border-top: 1px solid var(--border);
+  }
+  .ig-caption-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; margin-bottom: 4px; }
+  .ig-caption-text { font-size: 12px; color: var(--text2); white-space: pre-wrap; }
+  .ig-hashtags { font-size: 11px; color: var(--accent); margin-top: 6px; word-break: break-all; }
+  .ig-post-actions {
+    padding: 8px 14px 12px;
+    display: flex;
+    gap: 8px;
+  }
+
+  /* ── BRANDING ── */
+  .branding-box {
+    margin: 20px 28px 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .branding-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+  .branding-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .branding-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+  }
+  .color-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    padding: 2px;
+    background: var(--panel2);
+    cursor: pointer;
+  }
+
+  /* ── KUNDENDATEN TAB ── */
+  .kundendaten-box {
+    margin: 20px 28px 28px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .kundendaten-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+  .kundendaten-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .kundendaten-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+  }
+  .kd-value {
+    font-size: 13px;
+    color: var(--text);
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    min-height: 36px;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+  .kd-full { grid-column: 1 / -1; }
+  .kd-website a { color: var(--accent); text-decoration: none; }
+  .kd-website a:hover { text-decoration: underline; }
+
+  .new-batch-section {
+    padding: 0 28px 4px;
+  }
+  .new-batch-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 10px;
+  }
+  .new-batch-header::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+  .new-batch-box {
+    background: rgba(63,185,80,0.05);
+    border: 1px solid rgba(63,185,80,0.2);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .new-batch-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="okm-topbar">
+  <a href="/dashboard" class="okm-logo">OK <span>Media</span></a>
+  <div class="okm-nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/crm">CRM</a>
+    <a href="/skripte" class="active">Skripte</a>
+    <a href="/recherche">Recherche</a>
+    <a href="/denkt-mit">Denkt mit</a>
+    <a href="/systemgesundheit">System</a>
+  </div>
+  <div style="margin-left:auto">
+    <button class="btn btn-primary btn-sm" id="btn-new-customer">+ Neuer Kunde</button>
+  </div>
+  <div class="okm-topbar-right" style="display:flex;align-items:center;gap:8px;margin-left:auto">
+    <span id="me-name" style="font-size:12px;color:var(--muted)"></span>
+    <button id="me-avatar" onclick="logout()" title="Abmelden"
+      style="width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0">?</button>
+  </div>
+</nav>
+
+<!-- APP LAYOUT -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-search">
+      <input type="text" class="search-input" placeholder="Kunden suchen…" id="search-input">
+    </div>
+    <div class="customer-list" id="customer-list">
+      <div class="sidebar-empty">Lade Kunden…</div>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main class="main" id="main">
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">✦</div>
+      <h2>Kunden auswählen</h2>
+      <p>Wähle links einen Kunden aus oder lege einen neuen an.</p>
+    </div>
+
+    <!-- CUSTOMER VIEW (hidden initially) -->
+    <div id="customer-view" class="hidden">
+
+      <!-- CUSTOMER HEADER -->
+      <div class="customer-header">
+        <div class="customer-header-info">
+          <div class="customer-header-name" id="view-name">—</div>
+          <div class="customer-header-meta" id="view-meta">—</div>
+        </div>
+        <div class="customer-header-actions">
+          <button class="btn btn-icon" title="Bearbeiten" id="btn-edit-customer">✎</button>
+          <button class="btn btn-icon btn-danger" title="Löschen" id="btn-delete-customer">✕</button>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <nav class="customer-tabs">
+        <button class="tab-btn active" data-tab="skripte">✦ Skripte</button>
+        <button class="tab-btn" data-tab="einzelskript">◎ Einzelskript</button>
+        <button class="tab-btn" data-tab="instagram">📸 Instagram</button>
+        <button class="tab-btn" data-tab="branding">🎨 Branding</button>
+        <button class="tab-btn" data-tab="kundendaten">👤 Kundendaten</button>
+      </nav>
+
+      <!-- TAB: SKRIPTE -->
+      <div class="tab-panel active" id="tab-skripte">
+
+      <!-- GENERATE BOX -->
+      <div class="generate-box">
+        <div class="generate-box-title">Skripte erstellen</div>
+        <div class="generate-row">
+          <select class="select-field" id="month-select">
+            <option value="1">Januar</option>
+            <option value="2">Februar</option>
+            <option value="3">März</option>
+            <option value="4">April</option>
+            <option value="5">Mai</option>
+            <option value="6">Juni</option>
+            <option value="7">Juli</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Dezember</option>
+          </select>
+          <input type="number" class="input-field year-input" id="year-input" min="2020" max="2099">
+          <button class="btn btn-primary" id="btn-generate">✦ Skripte erstellen</button>
+          <button class="btn btn-themen" id="btn-themen-toggle" title="Eigene Themen vorgeben">🎯 Themen</button>
+        </div>
+
+        <!-- THEMEN-EINGABE (aufklappbar) -->
+        <div id="themen-box" class="themen-box hidden">
+          <div class="themen-box-header">
+            <span class="themen-box-title">🎯 Eigene Themen für diese Skripte</span>
+            <span class="themen-box-hint">Stichwörter, Themenideen oder Wünsche — werden gezielt in den Skripten eingebaut</span>
+          </div>
+          <textarea
+            id="themen-input"
+            class="themen-textarea"
+            placeholder="z.B. Sommerloch, Urlaubsangebote, Neukunden-Aktion im August, Vorher-Nachher Story eines Mitglieds, FAQ zu Ernährung…"
+            rows="3"
+          ></textarea>
+          <div class="themen-tags" id="themen-tags-preview"></div>
+        </div>
+
+        <div id="generate-warning" class="warning-box hidden">
+          ⚠ Für diesen Monat existieren bereits Skripte. Bei erneutem Erstellen wird eine neue Batch-Gruppe angelegt.
+        </div>
+        <div id="generate-error" class="error-box hidden"></div>
+      </div>
+
+      <!-- NEW BATCH RESULT (shown after generation) -->
+      <div id="new-batch-section" class="new-batch-section hidden">
+        <div class="new-batch-header">Neu erstellt</div>
+        <div class="new-batch-box">
+          <div id="new-strategie" class="strategie-block" style="margin:0 0 14px; background:var(--panel);">
+            <div class="strategie-label">Strategie-Hinweis</div>
+            <div class="strategie-text" id="new-strategie-text">—</div>
+          </div>
+          <div class="script-grid" id="new-script-grid"></div>
+          <div class="new-batch-actions">
+            <button class="btn btn-primary" id="btn-pdf-new">📄 PDF erstellen</button>
+            <button class="btn btn-danger btn-sm" id="btn-delete-new-batch">Batch löschen</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="history-section" id="history-section">
+        <div class="history-section-title">Skript-Verlauf</div>
+        <div id="batch-list"></div>
+      </div>
+
+      <!-- WOECHENTLICHE POSTS BOX -->
+      <div class="generate-box" id="canva-box">
+        <div class="generate-box-title">📐 Wöchentliche Posts</div>
+        <div class="generate-row">
+          <input type="text" class="input-field" id="canva-medien-input" placeholder="Medien-Ordner (Logo &amp; Fotos)" style="flex:2;min-width:280px;">
+          <button class="btn btn-sm" id="btn-canva-save">Speichern</button>
+          <button class="btn btn-primary" id="btn-canva-run">✦ Jetzt generieren</button>
+        </div>
+        <div id="canva-error" class="error-box hidden"></div>
+        <div class="script-grid" id="canva-posts-grid" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- LOADING OVERLAY -->
+      <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="spinner-icon">✦</div>
+        <div class="loading-title">Analysiert und erstellt die Skripte…</div>
+        <div class="loading-sub">Das dauert ca. 30–60 Sekunden.</div>
+      </div>
+
+      </div><!-- /tab-skripte -->
+
+      <!-- TAB: EINZELSKRIPT -->
+      <div class="tab-panel" id="tab-einzelskript">
+        <div class="einzelskript-box">
+          <div class="einzelskript-title">Einzelskript — individuelles Thema</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">
+            Gib ein konkretes Thema ein. Das System analysiert Kundenprofil, bisherige Skripte und entwickelt eine passende Struktur eigenständig.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <input type="text" class="input-field" id="es-thema-input"
+              placeholder="z. B. „Warum Rückentraining wichtiger ist als die meisten denken""
+              style="width:100%;">
+            <textarea class="input-field" id="es-zusatz-input" rows="2"
+              placeholder="Zusätzliche Informationen (optional): besondere Punkte, aktuelle Aktion, spezifische Botschaft…"
+              style="width:100%;resize:vertical;font-family:inherit;font-size:13px;padding:9px 12px;"></textarea>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn btn-primary" id="btn-es-generate">◎ Skript erstellen</button>
+              <span id="es-loading-txt" class="hidden" style="font-size:13px;color:var(--text2);">Skript wird erstellt…</span>
+            </div>
+            <div id="es-error" class="error-box hidden"></div>
+          </div>
+
+          <!-- Ergebnis -->
+          <div id="es-result" class="einzelskript-result hidden">
+            <div id="es-struktur-badge" class="es-struktur-badge hidden"></div>
+            <div class="script-field">
+              <div class="script-field-label">Titel</div>
+              <div class="script-field-value" id="es-titel">—</div>
+            </div>
+            <div class="script-field">
+              <div class="script-field-label">Hook</div>
+              <div class="script-field-value hook-value" id="es-hook">—</div>
+            </div>
+            <div class="script-field">
+              <div class="script-field-label">Skript</div>
+              <div class="script-field-value" id="es-skript">—</div>
+            </div>
+            <div class="script-field">
+              <div class="script-field-label">Call-to-Action</div>
+              <div class="script-field-value" id="es-cta">—</div>
+            </div>
+            <div class="script-field" id="es-dreh-group">
+              <div class="script-field-label">Drehhinweis</div>
+              <div class="script-field-value" id="es-dreh">—</div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+              <button class="btn btn-sm" onclick="copyEsSkript()">Kopieren</button>
+              <button class="btn btn-sm" id="btn-es-beitrag" onclick="generateEsBeitrag()">✦ Beitrag &amp; Story</button>
+              <button class="btn btn-sm btn-danger" onclick="clearEsResult()">↺ Neu erstellen</button>
+            </div>
+            <div id="es-beitrag-result" class="hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+              <div class="script-field">
+                <div class="script-field-label">Story-Titel</div>
+                <div class="script-field-value" id="es-story-titel">—</div>
+              </div>
+              <div class="script-field">
+                <div class="script-field-label">Beitragstext</div>
+                <div class="script-field-value" id="es-beitrag-text">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VERLAUF: Einzelskripte (aus History) -->
+        <div class="history-section" id="es-history-section" style="margin-top:10px;">
+          <div class="history-section-title">Einzelskripte-Verlauf</div>
+          <div id="es-batch-list"></div>
+        </div>
+      </div><!-- /tab-einzelskript -->
+
+      <!-- TAB: INSTAGRAM -->
+      <div class="tab-panel" id="tab-instagram">
+        <div class="instagram-box">
+          <div class="instagram-title">Instagram-Beiträge erstellen</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">
+            Gib ein Thema ein. Das System wählt das passende Format (Single-Post, Carousel, Experten-Post…) und erstellt vollständige Slides mit Caption und Hashtags.
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="flex:2;min-width:240px;">
+              <input type="text" class="input-field" id="ig-thema-input"
+                placeholder="z. B. „5 Tipps gegen Rückenschmerzen im Büro""
+                style="width:100%;">
+            </div>
+            <div>
+              <select class="select-field" id="ig-format-select" style="width:auto;">
+                <option value="auto">Format: Automatisch</option>
+                <option value="carousel">Carousel</option>
+                <option value="single">Single Post</option>
+                <option value="experten-post">Experten-Post</option>
+                <option value="informationsgrafik">Informationsgrafik</option>
+                <option value="angebots-post">Angebots-Post</option>
+                <option value="branding-post">Branding-Post</option>
+                <option value="recruiting-post">Recruiting-Post</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="btn-ig-generate">📸 Beitrag erstellen</button>
+          </div>
+          <div id="ig-error" class="error-box hidden" style="margin-top:10px;"></div>
+          <div id="ig-loading" class="hidden" style="margin-top:14px;font-size:13px;color:var(--text2);">Instagram-Beitrag wird entwickelt…</div>
+        </div>
+
+        <div style="padding: 0 28px 28px;">
+          <div id="ig-posts-grid" class="ig-posts-grid"></div>
+        </div>
+      </div><!-- /tab-instagram -->
+
+      <!-- TAB: BRANDING -->
+      <div class="tab-panel" id="tab-branding">
+        <div class="branding-box">
+          <div class="branding-title">Corporate Design</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">
+            Diese Daten werden bei jeder Inhaltsgenerierung automatisch berücksichtigt.
+          </p>
+          <div class="branding-grid">
+            <div class="branding-group">
+              <label>Primärfarbe</label>
+              <div class="color-input-row">
+                <input type="color" class="color-swatch" id="br-primary-picker">
+                <input type="text" class="input-field" id="br-primary" placeholder="#1a73e8" style="flex:1;">
+              </div>
+            </div>
+            <div class="branding-group">
+              <label>Sekundärfarbe</label>
+              <div class="color-input-row">
+                <input type="color" class="color-swatch" id="br-secondary-picker">
+                <input type="text" class="input-field" id="br-secondary" placeholder="#34a853" style="flex:1;">
+              </div>
+            </div>
+            <div class="branding-group">
+              <label>Akzentfarbe</label>
+              <div class="color-input-row">
+                <input type="color" class="color-swatch" id="br-accent-picker">
+                <input type="text" class="input-field" id="br-accent-col" placeholder="#ea4335" style="flex:1;">
+              </div>
+            </div>
+            <div class="branding-group">
+              <label>Hauptschrift</label>
+              <input type="text" class="input-field" id="br-font-haupt" placeholder="z. B. Montserrat" style="width:100%;">
+            </div>
+            <div class="branding-group">
+              <label>Textschrift</label>
+              <input type="text" class="input-field" id="br-font-text" placeholder="z. B. Open Sans" style="width:100%;">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div class="branding-group">
+              <label>Designstil</label>
+              <textarea class="input-field" id="br-design-stil" rows="2"
+                placeholder="z. B. Minimalistisch, viel Weißraum, moderne Typografie"
+                style="width:100%;resize:vertical;font-family:inherit;font-size:13px;padding:9px 12px;"></textarea>
+            </div>
+            <div class="branding-group">
+              <label>Bildsprache</label>
+              <textarea class="input-field" id="br-bildsprache" rows="2"
+                placeholder="z. B. Helle, natürliche Fotos, echte Menschen, keine Stockfotos"
+                style="width:100%;resize:vertical;font-family:inherit;font-size:13px;padding:9px 12px;"></textarea>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="btn btn-primary" id="btn-branding-save">Branding speichern</button>
+            <span id="branding-saved-msg" class="hidden" style="font-size:12px;color:var(--green);">✓ Gespeichert</span>
+            <div id="branding-error" class="error-box hidden" style="flex:1;margin:0;"></div>
+          </div>
+        </div>
+
+        <div class="branding-box" style="margin-top:16px;">
+          <div class="branding-title">Titelbild-Generator</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:0;">
+            Der Titelbild-Generator benötigt eine externe Bildgenerungs-API (z. B. Ideogram oder DALL-E 3 von OpenAI).<br>
+            Um diese Funktion zu aktivieren, füge deinen API-Key in <code style="font-size:12px;background:var(--panel2);padding:1px 5px;border-radius:3px;">config.json</code> ein:<br>
+            <code style="font-size:12px;background:var(--panel2);padding:1px 5px;border-radius:3px;">"openai_api_key": "sk-..."</code> (DALL-E 3) oder <code style="font-size:12px;background:var(--panel2);padding:1px 5px;border-radius:3px;">"ideogram_api_key": "..."</code>
+          </p>
+        </div>
+      </div><!-- /tab-branding -->
+
+      <!-- TAB: KUNDENDATEN -->
+      <div class="tab-panel" id="tab-kundendaten">
+        <div class="kundendaten-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div class="kundendaten-title" style="margin:0;">Kundenprofil</div>
+            <button class="btn btn-sm btn-primary" id="btn-kd-edit">✎ Bearbeiten</button>
+          </div>
+          <div class="kundendaten-grid" id="kd-grid">
+            <!-- dynamisch befüllt -->
+          </div>
+        </div>
+      </div><!-- /tab-kundendaten -->
+
+    </div><!-- /customer-view -->
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SCRIPT VIEWER MODAL -->
+<div class="modal-backdrop hidden" id="viewer-modal-backdrop">
+  <div class="modal viewer-modal" id="viewer-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="viewer-modal-title">Skript ansehen</div>
+      <button class="modal-close" id="viewer-close">✕</button>
+    </div>
+    <div class="modal-body" id="viewer-modal-body">
+      <div id="v-struktur-badge" class="es-struktur-badge hidden" style="margin-bottom:12px;"></div>
+      <div class="script-field">
+        <div class="script-field-label">Titel</div>
+        <div class="script-field-value" id="v-titel">—</div>
+      </div>
+      <div class="script-field">
+        <div class="script-field-label">Hook</div>
+        <div class="script-field-value hook-value" id="v-hook">—</div>
+      </div>
+      <div class="script-field">
+        <div class="script-field-label">Skript</div>
+        <div class="script-field-value" id="v-skript">—</div>
+      </div>
+      <div class="script-field">
+        <div class="script-field-label">Call-to-Action</div>
+        <div class="script-field-value" id="v-cta">—</div>
+      </div>
+      <div class="script-field" id="v-dreh-group">
+        <div class="script-field-label">Drehhinweis</div>
+        <div class="script-field-value" id="v-dreh">—</div>
+      </div>
+
+      <!-- ── BEITRAG & STORY ── -->
+      <div class="bs-section">
+        <div class="bs-section-title">Beitrag &amp; Story</div>
+
+        <!-- Generate Button (sichtbar wenn noch kein Inhalt) -->
+        <div id="bs-generate-area">
+          <button class="bs-generate-btn" id="bs-generate-btn" onclick="generateBeitragStory()">
+            ✦ Beitrag &amp; Story erstellen
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="bs-loading hidden" id="bs-loading">
+          <div class="bs-spinner"></div>
+          Beitragstext und Story-Titel werden erstellt…
+        </div>
+
+        <!-- Ergebnis -->
+        <div id="bs-result" class="hidden">
+          <div class="bs-field">
+            <div class="bs-field-header">
+              <div class="bs-field-label">Story-Titel</div>
+              <button class="bs-copy-btn" onclick="copyBS('bs-story-val', this)">Kopieren</button>
+            </div>
+            <div class="bs-value bs-story-value" id="bs-story-val">—</div>
+          </div>
+          <div class="bs-field">
+            <div class="bs-field-header">
+              <div class="bs-field-label">Beitragstext (Caption)</div>
+              <button class="bs-copy-btn" onclick="copyBS('bs-beitrag-val', this)">Kopieren</button>
+            </div>
+            <div class="bs-value" id="bs-beitrag-val">—</div>
+          </div>
+          <button class="bs-generate-btn" style="margin-top:4px" onclick="generateBeitragStory()">
+            ↺ Neu generieren
+          </button>
+        </div>
+
+        <!-- Fehler -->
+        <div class="error-box hidden" id="bs-error" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="viewer-close-btn">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- BEITRAG & STORY MODAL -->
+<div class="modal-backdrop hidden" id="bs-modal-backdrop">
+  <div class="modal viewer-modal" id="bs-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="bs-modal-title">Beitrag &amp; Story</div>
+      <button class="modal-close" onclick="closeBsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div id="bs-modal-generate-area">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">
+          Das System analysiert das Skript, das Unternehmen, die Zielgruppe und den Sprachstil — und erstellt automatisch einen professionellen Beitragstext und einen Story-Titel.
+        </p>
+        <button class="bs-generate-btn" id="bs-modal-btn" onclick="generateBsInModal()">
+          ✦ Beitrag &amp; Story erstellen
+        </button>
+      </div>
+
+      <div class="bs-loading hidden" id="bs-modal-loading">
+        <div class="bs-spinner"></div>
+        Beitragstext und Story-Titel werden erstellt…
+      </div>
+
+      <div id="bs-modal-result" class="hidden">
+        <div class="bs-field">
+          <div class="bs-field-header">
+            <div class="bs-field-label">Story-Titel</div>
+            <button class="bs-copy-btn" onclick="copyBS('bs-modal-story', this)">Kopieren</button>
+          </div>
+          <div class="bs-value bs-story-value" id="bs-modal-story">—</div>
+        </div>
+        <div class="bs-field" style="margin-top:14px">
+          <div class="bs-field-header">
+            <div class="bs-field-label">Beitragstext (Caption)</div>
+            <button class="bs-copy-btn" onclick="copyBS('bs-modal-beitrag', this)">Kopieren</button>
+          </div>
+          <div class="bs-value" id="bs-modal-beitrag">—</div>
+        </div>
+        <button class="bs-generate-btn" style="margin-top:16px" onclick="generateBsInModal()">
+          ↺ Neu generieren
+        </button>
+      </div>
+
+      <div class="error-box hidden" id="bs-modal-error" style="margin-top:12px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeBsModal()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- CUSTOMER FORM MODAL -->
+<div class="modal-backdrop hidden" id="form-modal-backdrop">
+  <div class="modal" id="form-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="form-modal-title">Neuer Kunde</div>
+      <button class="modal-close" id="form-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="customer-form" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Name <span class="req">*</span></label>
+            <input type="text" class="form-input" id="f-name" placeholder="z. B. Müller GmbH">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Branche <span class="req">*</span></label>
+            <input type="text" class="form-input" id="f-branche" placeholder="z. B. Zahnarzt">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Standort <span class="req">*</span></label>
+            <input type="text" class="form-input" id="f-standort" placeholder="z. B. München">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ansprechpartner</label>
+            <input type="text" class="form-input" id="f-ansprechpartner" placeholder="z. B. Dr. Müller">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Postingrhythmus</label>
+            <input type="text" class="form-input" id="f-postingrhythmus" placeholder="z. B. 2× pro Woche">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Skripte pro Monat</label>
+            <input type="number" class="form-input" id="f-skripte-pro-monat" value="4" min="1" max="20">
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Zielgruppe <span class="req">*</span></label>
+            <textarea class="form-textarea" id="f-zielgruppe" placeholder="Wer ist die Zielgruppe? Alter, Interessen, Probleme…"></textarea>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Ziele <span class="req">*</span></label>
+            <textarea class="form-textarea" id="f-ziele" placeholder="Was sollen die Inhalte erreichen? Mehr Anfragen, Bekanntheit…"></textarea>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Leistungen <span class="req">*</span></label>
+            <textarea class="form-textarea" id="f-leistungen" placeholder="Welche Leistungen/Produkte bietet der Kunde an?"></textarea>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Tonalität <span class="req">*</span></label>
+            <textarea class="form-textarea" id="f-tonalitaet" placeholder="Wie soll gesprochen werden? Professionell, locker, humorvoll…"></textarea>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Contentstrategie</label>
+            <textarea class="form-textarea" id="f-contentstrategie" placeholder="Übergeordnete Content-Strategie, wiederkehrende Themen…"></textarea>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Besonderheiten</label>
+            <textarea class="form-textarea" id="f-besonderheiten" placeholder="Tabuthemen, USPs, besondere Hinweise…"></textarea>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Website</label>
+            <input type="url" class="form-input" id="f-website" placeholder="https://www.kundenwebsite.de">
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Produkte</label>
+            <textarea class="form-textarea" id="f-produkte" placeholder="Spezifische Produkte mit Namen und kurzer Beschreibung…"></textarea>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Social-Media-Ziele</label>
+            <textarea class="form-textarea" id="f-social-media-ziele" placeholder="Was soll durch Social Media konkret erreicht werden? Follower, Anfragen, Termine…"></textarea>
+          </div>
+        </div>
+        <div id="form-error" class="error-box hidden mt-16"></div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="form-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="form-save">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════
+const state = {
+  customers: [],
+  filteredCustomers: [],
+  selectedCustomer: null,
+  currentBatches: [],
+  newBatch: null,
+  editingCustomerId: null,
+  viewerSkriptId: null,
+};
+
+// ════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+
+function initMonthYear() {
+  const now = new Date();
+  $('month-select').value = String(now.getMonth() + 1);
+  $('year-input').value = String(now.getFullYear());
+}
+
+function monthName(n) {
+  const names = ['Januar','Februar','März','April','Mai','Juni',
+                  'Juli','August','September','Oktober','November','Dezember'];
+  return names[(parseInt(n) - 1)] || '—';
+}
+
+// "2026-07" → "Juli 2026"
+function batchLabel(monat) {
+  if (!monat || !monat.includes('-')) return monat || '—';
+  const [jahr, mon] = monat.split('-');
+  return `${monthName(mon)} ${jahr}`;
+}
+
+function truncate(str, len) {
+  if (!str) return '';
+  return str.length > len ? str.slice(0, len) + '…' : str;
+}
+
+function initials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function showEl(id) { $(id).classList.remove('hidden'); }
+function hideEl(id) { $(id).classList.add('hidden'); }
+function toggleEl(id, show) { $(id).classList.toggle('hidden', !show); }
+
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || data.message || `Fehler ${res.status}`);
+  return data;
+}
+
+// ════════════════════════════════════════════════════════
+// CUSTOMER LIST
+// ════════════════════════════════════════════════════════
+async function loadCustomers() {
+  try {
+    const data = await api('GET', '/api/skripte/kunden');
+    state.customers = Array.isArray(data) ? data : (data.kunden || []);
+    renderCustomerList(state.customers);
+  } catch (e) {
+    $('customer-list').innerHTML = `<div class="sidebar-empty" style="color:var(--red)">Fehler beim Laden</div>`;
+  }
+}
+
+function renderCustomerList(list) {
+  const el = $('customer-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="sidebar-empty">Keine Kunden gefunden.</div>';
+    return;
+  }
+  el.innerHTML = list.map(c => `
+    <div class="customer-item${state.selectedCustomer?.id === c.id ? ' active' : ''}"
+         data-id="${c.id}" onclick="selectCustomer(${c.id})">
+      <div class="customer-avatar">${initials(c.name)}</div>
+      <div class="customer-info">
+        <div class="customer-name">${esc(c.name)}</div>
+        <div class="location-badge">${esc(c.standort || '')}${c.branche ? ' · ' + esc(c.branche) : ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterCustomers(q) {
+  const lq = q.toLowerCase();
+  const filtered = state.customers.filter(c =>
+    c.name.toLowerCase().includes(lq) ||
+    (c.standort || '').toLowerCase().includes(lq) ||
+    (c.branche || '').toLowerCase().includes(lq)
+  );
+  renderCustomerList(filtered);
+}
+
+$('search-input').addEventListener('input', e => filterCustomers(e.target.value));
+
+// ════════════════════════════════════════════════════════
+// SELECT CUSTOMER
+// ════════════════════════════════════════════════════════
+async function selectCustomer(id) {
+  state.selectedCustomer = null;
+  state.newBatch = null;
+  hideEl('new-batch-section');
+  hideEl('generate-warning');
+  hideEl('generate-error');
+
+  // Update sidebar highlight
+  document.querySelectorAll('.customer-item').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.id) === id);
+  });
+
+  showEl('customer-view');
+  hideEl('empty-state');
+
+  try {
+    const customer = await api('GET', `/api/skripte/kunden/${id}`);
+    state.selectedCustomer = customer;
+    state.currentBatches = customer.batches || [];
+    renderCustomerView(customer);
+    renderBatchHistory(state.currentBatches);
+    checkMonthWarning();
+    renderCanvaBox(customer);
+    loadCanvaPosts(customer.id);
+  } catch (e) {
+    $('view-name').textContent = 'Fehler beim Laden';
+  }
+}
+
+function renderCustomerView(c) {
+  $('view-name').textContent = c.name || '—';
+  $('view-meta').innerHTML = `<strong>${esc(c.branche || '—')}</strong><span> · </span>${esc(c.standort || '—')}`;
+  renderKundendaten(c);
+}
+
+function renderKundendaten(c) {
+  const fields = [
+    { label: 'Name', key: 'name' },
+    { label: 'Branche', key: 'branche' },
+    { label: 'Standort', key: 'standort' },
+    { label: 'Ansprechpartner', key: 'ansprechpartner' },
+    { label: 'Website', key: 'website', isUrl: true },
+    { label: 'Postingrhythmus', key: 'postingrhythmus' },
+    { label: 'Skripte/Monat', key: 'skripte_pro_monat' },
+    { label: 'Zielgruppe', key: 'zielgruppe', full: true },
+    { label: 'Ziele', key: 'ziele', full: true },
+    { label: 'Leistungen', key: 'leistungen', full: true },
+    { label: 'Produkte', key: 'produkte', full: true },
+    { label: 'Tonalität', key: 'tonalitaet', full: true },
+    { label: 'Content-Strategie', key: 'contentstrategie', full: true },
+    { label: 'Social-Media-Ziele', key: 'social_media_ziele', full: true },
+    { label: 'Besonderheiten', key: 'besonderheiten', full: true },
+  ];
+  const grid = $('kd-grid');
+  if (!grid) return;
+  grid.innerHTML = fields.map(f => {
+    const val = c[f.key] || '—';
+    const cls = f.full ? 'kundendaten-group kd-full' : 'kundendaten-group';
+    let valHtml;
+    if (f.isUrl && c[f.key]) {
+      valHtml = `<div class="kd-value kd-website"><a href="${esc(c[f.key])}" target="_blank" rel="noopener">${esc(c[f.key])}</a></div>`;
+    } else {
+      valHtml = `<div class="kd-value">${esc(String(val))}</div>`;
+    }
+    return `<div class="${cls}"><label>${f.label}</label>${valHtml}</div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// BATCH HISTORY
+// ════════════════════════════════════════════════════════
+function renderBatchHistory(batches) {
+  const container = $('batch-list');
+  if (!batches.length) {
+    container.innerHTML = '<div style="color:var(--text3);font-size:13px;">Noch keine Skripte vorhanden.</div>';
+    return;
+  }
+
+  container.innerHTML = batches.map(batch => `
+    <div class="batch-group" id="batch-group-${batch.id}">
+      <div class="batch-label">
+        <div class="batch-label-dot"></div>
+        <div class="batch-label-text">${batchLabel(batch.monat)} · ${(batch.skripte || []).length} Skripte</div>
+        <div class="batch-actions">
+          <a href="/skripte/pdf/${batch.id}" target="_blank" class="btn btn-sm">📄 PDF</a>
+          <button class="btn btn-sm btn-danger" onclick="deleteBatch(${batch.id})">Löschen</button>
+        </div>
+      </div>
+      <div class="script-grid">
+        ${(batch.skripte || []).map((s, i) => renderScriptCard(s, i)).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderScriptCard(s, i) {
+  const pos = s.position || (i + 1);
+  const hasBs = !!(s.beitrag_text || s.story_titel);
+  return `
+    <div class="script-card">
+      <div class="script-card-pos">Skript ${pos}</div>
+      <div class="script-card-title">${esc(s.titel || '—')}</div>
+      <div class="script-card-hook">${esc(truncate(s.hook, 80))}</div>
+      <div class="script-card-actions">
+        <button class="btn btn-sm" data-script='${JSON.stringify(s).replace(/'/g,"&#39;")}' onclick="viewScriptFromBtn(this)">Ansehen</button>
+        <button class="btn btn-sm" style="border-color:rgba(210,153,34,0.4);color:var(--orange)${hasBs ? ';opacity:0.6' : ''}"
+          onclick="openBsModal(${s.id}, ${JSON.stringify(s.titel||'').replace(/"/g,'&quot;')})">
+          ${hasBs ? '✓' : '✦'} Beitrag &amp; Story
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════════════════════
+// MONTH WARNING
+// ════════════════════════════════════════════════════════
+function checkMonthWarning() {
+  const monat = parseInt($('month-select').value);
+  const jahr = parseInt($('year-input').value);
+  const monatStr = `${jahr}-${String(monat).padStart(2,'0')}`;
+  const exists = state.currentBatches.some(b => b.monat === monatStr);
+  toggleEl('generate-warning', exists);
+}
+
+$('month-select').addEventListener('change', checkMonthWarning);
+$('year-input').addEventListener('input', checkMonthWarning);
+
+// ════════════════════════════════════════════════════════
+// GENERATE SCRIPTS
+// ════════════════════════════════════════════════════════
+// ── Themen-Toggle ──────────────────────────────────
+$('btn-themen-toggle').addEventListener('click', () => {
+  const box = $('themen-box');
+  const btn = $('btn-themen-toggle');
+  const open = box.classList.toggle('hidden');
+  btn.classList.toggle('active', !open);
+  if (!open) $('themen-input').focus();
+});
+
+// Stichwort-Tags live vorschau während Eingabe
+$('themen-input').addEventListener('input', () => {
+  const val = $('themen-input').value;
+  const tags = val.split(/[,\n]+/).map(t => t.trim()).filter(t => t.length > 1);
+  const preview = $('themen-tags-preview');
+  preview.innerHTML = tags.map(t => `<span class="themen-tag">${esc(t)}</span>`).join('');
+});
+
+$('btn-generate').addEventListener('click', async () => {
+  if (!state.selectedCustomer) return;
+  const monat = $('month-select').value;
+  const jahr = $('year-input').value;
+  const themen = $('themen-input').value.trim();
+
+  hideEl('generate-error');
+  showEl('loading-overlay');
+  hideEl('new-batch-section');
+
+  try {
+    const payload = {
+      kunden_id: state.selectedCustomer.id,
+      monat: `${jahr}-${String(monat).padStart(2,'0')}`,
+    };
+    if (themen) payload.themen = themen;
+
+    const result = await api('POST', '/api/skripte/generieren', payload);
+
+    state.newBatch = result;
+
+    // Update batches list
+    const updated = await api('GET', `/api/skripte/kunden/${state.selectedCustomer.id}`);
+    state.currentBatches = updated.batches || [];
+    renderBatchHistory(state.currentBatches);
+    checkMonthWarning();
+
+    renderNewBatch(result);
+    showEl('new-batch-section');
+
+  } catch (e) {
+    const errEl = $('generate-error');
+    errEl.textContent = e.message || 'Unbekannter Fehler beim Erstellen der Skripte.';
+    showEl('generate-error');
+  } finally {
+    hideEl('loading-overlay');
+  }
+});
+
+function renderNewBatch(batch) {
+  const skripte = batch.skripte || [];
+  $('new-strategie-text').textContent = batch.strategie || '';
+  toggleEl('new-strategie', !!batch.strategie);
+
+  $('new-script-grid').innerHTML = skripte.map((s, i) => renderScriptCard(s, i)).join('');
+
+  const batchId = batch.id || batch.batch_id;
+  $('btn-pdf-new').onclick = () => {
+    if (!batchId) { alert('Batch-ID nicht verfügbar — bitte Seite neu laden.'); return; }
+    window.open(`/skripte/pdf/${batchId}`, '_blank');
+  };
+  $('btn-delete-new-batch').onclick = () => {
+    deleteBatch(batch.id, true);
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// DELETE BATCH
+// ════════════════════════════════════════════════════════
+async function deleteBatch(batchId, isNew = false) {
+  if (!confirm('Batch wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+  try {
+    await api('DELETE', `/api/skripte/batch/${batchId}`);
+    state.currentBatches = state.currentBatches.filter(b => b.id !== batchId);
+    renderBatchHistory(state.currentBatches);
+    if (isNew || (state.newBatch && state.newBatch.id === batchId)) {
+      state.newBatch = null;
+      hideEl('new-batch-section');
+    }
+    checkMonthWarning();
+  } catch (e) {
+    alert('Fehler beim Löschen: ' + e.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// SCRIPT VIEWER MODAL
+// ════════════════════════════════════════════════════════
+function viewScriptFromBtn(btn) {
+  viewScript(JSON.parse(btn.dataset.script));
+}
+
+function viewScript(s) {
+  if (typeof s === 'string') s = JSON.parse(s);
+  $('viewer-modal-title').textContent = s.titel || 'Skript';
+  $('v-titel').textContent = s.titel || '—';
+  $('v-hook').textContent = s.hook || '—';
+  $('v-skript').textContent = s.skript || s.text || '—';
+  $('v-cta').textContent = s.cta || '—';
+  const hasDreh = !!(s.drehhinweis || s.dreh_hinweis);
+  toggleEl('v-dreh-group', hasDreh);
+  if (hasDreh) $('v-dreh').textContent = s.drehhinweis || s.dreh_hinweis || '';
+  // Struktur-Badge
+  if (s.struktur) {
+    $('v-struktur-badge').textContent = '◈ ' + s.struktur;
+    showEl('v-struktur-badge');
+  } else {
+    hideEl('v-struktur-badge');
+  }
+
+  // Beitrag & Story zurücksetzen
+  state.viewerSkriptId = s.id || null;
+  hideEl('bs-loading');
+  hideEl('bs-error');
+  $('bs-error').textContent = '';
+  if (s.beitrag_text || s.story_titel) {
+    $('bs-beitrag-val').textContent = s.beitrag_text || '—';
+    $('bs-story-val').textContent = s.story_titel || '—';
+    hideEl('bs-generate-area');
+    showEl('bs-result');
+  } else {
+    showEl('bs-generate-area');
+    hideEl('bs-result');
+  }
+
+  showEl('viewer-modal-backdrop');
+}
+
+// ════════════════════════════════════════════════════════
+// BEITRAG & STORY MODAL
+// ════════════════════════════════════════════════════════
+let bsModalSkriptId = null;
+
+function openBsModal(skriptId, titel) {
+  if (!skriptId || skriptId === 'undefined') {
+    alert('Skript-ID fehlt. Bitte Jarvis neu starten und Seite neu laden.');
+    return;
+  }
+  bsModalSkriptId = skriptId;
+  $('bs-modal-title').textContent = titel ? `Beitrag & Story · ${titel}` : 'Beitrag & Story';
+  hideEl('bs-modal-loading');
+  hideEl('bs-modal-result');
+  hideEl('bs-modal-error');
+  showEl('bs-modal-generate-area');
+  showEl('bs-modal-backdrop');
+}
+
+function closeBsModal() {
+  hideEl('bs-modal-backdrop');
+  bsModalSkriptId = null;
+}
+
+async function generateBsInModal() {
+  if (!bsModalSkriptId) return;
+  hideEl('bs-modal-generate-area');
+  hideEl('bs-modal-result');
+  hideEl('bs-modal-error');
+  showEl('bs-modal-loading');
+
+  try {
+    const res = await fetch(`/api/skripte/${bsModalSkriptId}/beitrag-story`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Fehler beim Generieren');
+
+    $('bs-modal-story').textContent   = data.story_titel  || '—';
+    $('bs-modal-beitrag').textContent = data.beitrag_text || '—';
+    hideEl('bs-modal-loading');
+    showEl('bs-modal-result');
+
+    // Karten aktualisieren damit ✓ angezeigt wird
+    if (state.selectedCustomer) selectCustomer(state.selectedCustomer.id);
+  } catch (e) {
+    hideEl('bs-modal-loading');
+    showEl('bs-modal-generate-area');
+    $('bs-modal-error').textContent = e.message || 'Unbekannter Fehler.';
+    showEl('bs-modal-error');
+  }
+}
+
+async function generateBeitragStory() {
+  if (!state.viewerSkriptId) {
+    $('bs-error').textContent = 'Skript-ID nicht gefunden. Bitte Skript neu öffnen.';
+    showEl('bs-error');
+    return;
+  }
+  hideEl('bs-generate-area');
+  hideEl('bs-result');
+  hideEl('bs-error');
+  showEl('bs-loading');
+
+  try {
+    const res = await fetch(`/api/skripte/${state.viewerSkriptId}/beitrag-story`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Fehler beim Generieren');
+
+    $('bs-beitrag-val').textContent = data.beitrag_text || '—';
+    $('bs-story-val').textContent = data.story_titel || '—';
+    hideEl('bs-loading');
+    showEl('bs-result');
+  } catch (e) {
+    hideEl('bs-loading');
+    showEl('bs-generate-area');
+    $('bs-error').textContent = e.message || 'Unbekannter Fehler.';
+    showEl('bs-error');
+  }
+}
+
+function copyBS(elId, btn) {
+  const text = $(elId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Kopiert';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Kopieren';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function closeViewerModal() { hideEl('viewer-modal-backdrop'); }
+$('viewer-close').addEventListener('click', closeViewerModal);
+$('viewer-close-btn').addEventListener('click', closeViewerModal);
+$('viewer-modal-backdrop').addEventListener('click', e => {
+  if (e.target === $('viewer-modal-backdrop')) closeViewerModal();
+});
+
+// ════════════════════════════════════════════════════════
+// CUSTOMER FORM MODAL
+// ════════════════════════════════════════════════════════
+const FORM_FIELDS = [
+  { id: 'f-name', key: 'name' },
+  { id: 'f-branche', key: 'branche' },
+  { id: 'f-standort', key: 'standort' },
+  { id: 'f-ansprechpartner', key: 'ansprechpartner' },
+  { id: 'f-postingrhythmus', key: 'postingrhythmus' },
+  { id: 'f-skripte-pro-monat', key: 'skripte_pro_monat' },
+  { id: 'f-zielgruppe', key: 'zielgruppe' },
+  { id: 'f-ziele', key: 'ziele' },
+  { id: 'f-leistungen', key: 'leistungen' },
+  { id: 'f-tonalitaet', key: 'tonalitaet' },
+  { id: 'f-contentstrategie', key: 'contentstrategie' },
+  { id: 'f-besonderheiten', key: 'besonderheiten' },
+  { id: 'f-website', key: 'website' },
+  { id: 'f-produkte', key: 'produkte' },
+  { id: 'f-social-media-ziele', key: 'social_media_ziele' },
+];
+const REQUIRED_FIELDS = ['f-name','f-branche','f-standort','f-zielgruppe','f-ziele','f-leistungen','f-tonalitaet'];
+
+function openNewCustomerModal() {
+  state.editingCustomerId = null;
+  $('form-modal-title').textContent = 'Neuer Kunde';
+  FORM_FIELDS.forEach(f => {
+    const el = $(f.id);
+    el.value = f.key === 'skripte_pro_monat' ? '4' : '';
+    el.classList.remove('error');
+  });
+  hideEl('form-error');
+  showEl('form-modal-backdrop');
+}
+
+function openEditCustomerModal(customer) {
+  state.editingCustomerId = customer.id;
+  $('form-modal-title').textContent = 'Kunde bearbeiten';
+  FORM_FIELDS.forEach(f => {
+    const el = $(f.id);
+    el.value = customer[f.key] !== undefined ? customer[f.key] : '';
+    el.classList.remove('error');
+  });
+  hideEl('form-error');
+  showEl('form-modal-backdrop');
+}
+
+function closeFormModal() { hideEl('form-modal-backdrop'); }
+$('form-close').addEventListener('click', closeFormModal);
+$('form-cancel').addEventListener('click', closeFormModal);
+$('form-modal-backdrop').addEventListener('click', e => {
+  if (e.target === $('form-modal-backdrop')) closeFormModal();
+});
+
+$('btn-new-customer').addEventListener('click', openNewCustomerModal);
+
+$('btn-edit-customer').addEventListener('click', () => {
+  if (state.selectedCustomer) openEditCustomerModal(state.selectedCustomer);
+});
+
+$('btn-delete-customer').addEventListener('click', async () => {
+  if (!state.selectedCustomer) return;
+  if (!confirm(`Kunden "${state.selectedCustomer.name}" wirklich löschen?`)) return;
+  try {
+    await api('DELETE', `/api/skripte/kunden/${state.selectedCustomer.id}`);
+    state.selectedCustomer = null;
+    hideEl('customer-view');
+    showEl('empty-state');
+    await loadCustomers();
+  } catch (e) {
+    alert('Fehler beim Löschen: ' + e.message);
+  }
+});
+
+$('form-save').addEventListener('click', async () => {
+  // Validate
+  let valid = true;
+  REQUIRED_FIELDS.forEach(fid => {
+    const el = $(fid);
+    if (!el.value.trim()) {
+      el.classList.add('error');
+      valid = false;
+    } else {
+      el.classList.remove('error');
+    }
+  });
+
+  if (!valid) {
+    const errEl = $('form-error');
+    errEl.textContent = 'Bitte alle Pflichtfelder ausfüllen.';
+    showEl('form-error');
+    return;
+  }
+
+  hideEl('form-error');
+
+  const payload = {};
+  FORM_FIELDS.forEach(f => {
+    const val = $(f.id).value;
+    payload[f.key] = f.key === 'skripte_pro_monat' ? parseInt(val) || 4 : val;
+  });
+
+  try {
+    let saved;
+    if (state.editingCustomerId) {
+      saved = await api('PUT', `/api/skripte/kunden/${state.editingCustomerId}`, payload);
+    } else {
+      saved = await api('POST', '/api/skripte/kunden', payload);
+    }
+    closeFormModal();
+    await loadCustomers();
+    if (saved && saved.id) {
+      await selectCustomer(saved.id);
+    }
+  } catch (e) {
+    const errEl = $('form-error');
+    errEl.textContent = e.message || 'Fehler beim Speichern.';
+    showEl('form-error');
+  }
+});
+
+// ════════════════════════════════════════════════════════
+// ESCAPE KEY
+// ════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeViewerModal();
+    closeFormModal();
+    closeBsModal();
+  }
+});
+
+$('bs-modal-backdrop').addEventListener('click', e => {
+  if (e.target === $('bs-modal-backdrop')) closeBsModal();
+});
+
+// ════════════════════════════════════════════════════════
+// WOECHENTLICHE POSTS
+// ════════════════════════════════════════════════════════
+function renderCanvaBox(c) {
+  $('canva-medien-input').value = c.canva_medien_pfad || `/Users/user/Desktop/OK Media Skripte/${c.name}/Medien`;
+  hideEl('canva-error');
+}
+
+async function loadCanvaPosts(kid) {
+  try {
+    const posts = await api('GET', `/api/skripte/kunden/${kid}/canva-posts`);
+    renderCanvaPosts(posts);
+  } catch (e) {
+    $('canva-posts-grid').innerHTML = '';
+  }
+}
+
+function renderCanvaPosts(posts) {
+  const grid = $('canva-posts-grid');
+  if (!posts.length) {
+    grid.innerHTML = '<div style="color:var(--text3);font-size:13px;">Noch keine Posts generiert.</div>';
+    return;
+  }
+  grid.innerHTML = posts.map(p => `
+    <div class="script-card">
+      <img src="/api/canva-posts/${p.id}/image" style="width:100%;border-radius:6px;aspect-ratio:4/5;object-fit:cover;">
+      <div class="script-card-pos">${esc(p.goal || '')}</div>
+      <div class="script-card-title">${esc(p.headline || '')}</div>
+      <div class="script-card-hook">${esc(p.subtext || '')}</div>
+      <div class="script-card-actions">
+        <a class="btn btn-sm" href="/api/canva-posts/${p.id}/download" target="_blank" rel="noopener">⬇ Download</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+$('btn-canva-save').addEventListener('click', async () => {
+  if (!state.selectedCustomer) return;
+  hideEl('canva-error');
+  try {
+    await api('PUT', `/api/skripte/kunden/${state.selectedCustomer.id}/canva-config`, {
+      medien_pfad: $('canva-medien-input').value.trim(),
+    });
+  } catch (e) {
+    $('canva-error').textContent = e.message || 'Fehler beim Speichern.';
+    showEl('canva-error');
+  }
+});
+
+$('btn-canva-run').addEventListener('click', async () => {
+  if (!state.selectedCustomer) return;
+  hideEl('canva-error');
+  const btn = $('btn-canva-run');
+  btn.disabled = true;
+  btn.textContent = 'Generiere …';
+  try {
+    await api('POST', `/api/skripte/kunden/${state.selectedCustomer.id}/canva-run`);
+    await loadCanvaPosts(state.selectedCustomer.id);
+  } catch (e) {
+    $('canva-error').textContent = e.message || 'Fehler bei der Generierung.';
+    showEl('canva-error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✦ Jetzt generieren';
+  }
+});
+
+// ════════════════════════════════════════════════════════
+// ESCAPE HTML
+// ════════════════════════════════════════════════════════
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ════════════════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = $('tab-' + tab);
+    if (panel) panel.classList.add('active');
+    // Beim Wechsel zu Instagram/Branding Daten nachladen
+    if (tab === 'instagram' && state.selectedCustomer) loadIgPosts(state.selectedCustomer.id);
+    if (tab === 'branding' && state.selectedCustomer) loadBranding(state.selectedCustomer.id);
+    if (tab === 'einzelskript' && state.selectedCustomer) loadEsHistory(state.selectedCustomer.id);
+  });
+});
+
+// Kundendaten-Bearbeiten-Button
+document.addEventListener('DOMContentLoaded', () => {});
+document.addEventListener('click', e => {
+  if (e.target && e.target.id === 'btn-kd-edit') {
+    if (state.selectedCustomer) openEditCustomerModal(state.selectedCustomer);
+  }
+});
+
+// ════════════════════════════════════════════════════════
+// EINZELSKRIPT
+// ════════════════════════════════════════════════════════
+let esSkriptId = null;
+
+$('btn-es-generate').addEventListener('click', async () => {
+  if (!state.selectedCustomer) return;
+  const thema = $('es-thema-input').value.trim();
+  if (!thema) { $('es-error').textContent = 'Bitte ein Thema eingeben.'; showEl('es-error'); return; }
+  hideEl('es-error');
+  hideEl('es-result');
+  $('btn-es-generate').disabled = true;
+  showEl('es-loading-txt');
+
+  try {
+    const payload = { kunden_id: state.selectedCustomer.id, thema };
+    const zusatz = $('es-zusatz-input').value.trim();
+    if (zusatz) payload.zusatzinfo = zusatz;
+
+    const res = await api('POST', '/api/skripte/einzeln', payload);
+    esSkriptId = res.id;
+
+    $('es-titel').textContent = res.titel || '—';
+    $('es-hook').textContent = res.hook || '—';
+    $('es-skript').textContent = res.skript || '—';
+    $('es-cta').textContent = res.cta || '—';
+    if (res.drehhinweis) {
+      $('es-dreh').textContent = res.drehhinweis;
+      showEl('es-dreh-group');
+    } else {
+      hideEl('es-dreh-group');
+    }
+    if (res.struktur) {
+      $('es-struktur-badge').textContent = '◈ ' + res.struktur;
+      showEl('es-struktur-badge');
+    } else {
+      hideEl('es-struktur-badge');
+    }
+    hideEl('es-beitrag-result');
+    showEl('es-result');
+    // History aktualisieren
+    loadEsHistory(state.selectedCustomer.id);
+  } catch (e) {
+    $('es-error').textContent = e.message || 'Fehler beim Erstellen.';
+    showEl('es-error');
+  } finally {
+    $('btn-es-generate').disabled = false;
+    hideEl('es-loading-txt');
+  }
+});
+
+function clearEsResult() {
+  hideEl('es-result');
+  esSkriptId = null;
+  $('es-thema-input').value = '';
+  $('es-zusatz-input').value = '';
+}
+
+function copyEsSkript() {
+  const text = [
+    'HOOK: ' + $('es-hook').textContent,
+    '',
+    $('es-skript').textContent,
+    '',
+    'CTA: ' + $('es-cta').textContent
+  ].join('\n');
+  navigator.clipboard.writeText(text).then(() => alert('Skript kopiert!'));
+}
+
+async function generateEsBeitrag() {
+  if (!esSkriptId) return;
+  const btn = $('btn-es-beitrag');
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const res = await fetch(`/api/skripte/${esSkriptId}/beitrag-story`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Fehler');
+    $('es-story-titel').textContent = data.story_titel || '—';
+    $('es-beitrag-text').textContent = data.beitrag_text || '—';
+    showEl('es-beitrag-result');
+  } catch (e) {
+    alert('Fehler: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✦ Beitrag & Story';
+  }
+}
+
+async function loadEsHistory(kid) {
+  try {
+    const customer = await api('GET', `/api/skripte/kunden/${kid}`);
+    // Einzelskripte herausfiltern (monat beginnt mit "einzeln_")
+    const batches = (customer.batches || []).filter(b => b.monat && b.monat.startsWith('einzeln_'));
+    const container = $('es-batch-list');
+    if (!batches.length) {
+      container.innerHTML = '<div style="color:var(--text3);font-size:13px;">Noch keine Einzelskripte vorhanden.</div>';
+      return;
+    }
+    container.innerHTML = batches.map(batch => {
+      const skripte = batch.skripte || [];
+      const thema = batch.strategie ? batch.strategie.replace('Einzelskript: ', '') : '—';
+      return `
+        <div class="batch-group">
+          <div class="batch-label">
+            <div class="batch-label-dot"></div>
+            <div class="batch-label-text">Thema: ${esc(thema)} · ${batch.erstellt_am ? batch.erstellt_am.slice(0,10) : ''}</div>
+            <div class="batch-actions">
+              <button class="btn btn-sm btn-danger" onclick="deleteBatch(${batch.id})">Löschen</button>
+            </div>
+          </div>
+          <div class="script-grid">
+            ${skripte.map((s, i) => renderScriptCard(s, i)).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {}
+}
+
+// ════════════════════════════════════════════════════════
+// INSTAGRAM
+// ════════════════════════════════════════════════════════
+$('btn-ig-generate').addEventListener('click', async () => {
+  if (!state.selectedCustomer) return;
+  const thema = $('ig-thema-input').value.trim();
+  if (!thema) { $('ig-error').textContent = 'Bitte ein Thema eingeben.'; showEl('ig-error'); return; }
+  hideEl('ig-error');
+  const btn = $('btn-ig-generate');
+  btn.disabled = true;
+  showEl('ig-loading');
+
+  try {
+    const res = await api('POST', '/api/instagram/generieren', {
+      kunden_id: state.selectedCustomer.id,
+      thema,
+      format: $('ig-format-select').value,
+    });
+    $('ig-thema-input').value = '';
+    loadIgPosts(state.selectedCustomer.id);
+  } catch (e) {
+    $('ig-error').textContent = e.message || 'Fehler beim Erstellen.';
+    showEl('ig-error');
+  } finally {
+    btn.disabled = false;
+    hideEl('ig-loading');
+  }
+});
+
+async function loadIgPosts(kid) {
+  try {
+    const data = await api('GET', `/api/instagram/kunden/${kid}`);
+    renderIgPosts(data.posts || []);
+  } catch (e) {}
+}
+
+function renderIgPosts(posts) {
+  const grid = $('ig-posts-grid');
+  if (!posts.length) {
+    grid.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:4px 0;">Noch keine Instagram-Beiträge vorhanden.</div>';
+    return;
+  }
+  grid.innerHTML = posts.map(p => {
+    let slides = [];
+    try { slides = JSON.parse(p.slides_json || '[]'); } catch (e) {}
+    const slidesHtml = slides.slice(0, 5).map(s => `
+      <div class="ig-slide">
+        <div class="ig-slide-nr">SLIDE ${s.nr}</div>
+        <div class="ig-slide-headline">${esc(s.headline || '')}</div>
+        ${s.text ? `<div class="ig-slide-text">${esc(s.text)}</div>` : ''}
+        ${s.visual ? `<div class="ig-slide-visual">📷 ${esc(s.visual)}</div>` : ''}
+      </div>
+    `).join('') + (slides.length > 5 ? `<div style="font-size:11px;color:var(--text3);padding:4px 0;">+${slides.length-5} weitere Slides</div>` : '');
+
+    return `
+      <div class="ig-post-card">
+        <div class="ig-post-header">
+          <div class="ig-post-format">${esc(p.format ? p.format.split('·')[0].trim() : 'Post')}</div>
+          <div class="ig-post-thema">${esc(p.thema || '—')}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;">${p.erstellt_am ? p.erstellt_am.slice(0,10) : ''}</div>
+        </div>
+        ${slides.length ? `<div class="ig-slides">${slidesHtml}</div>` : ''}
+        ${p.caption ? `
+          <div class="ig-caption-box">
+            <div class="ig-caption-label">Caption</div>
+            <div class="ig-caption-text">${esc(p.caption)}</div>
+            ${p.hashtags ? `<div class="ig-hashtags">${esc(p.hashtags)}</div>` : ''}
+          </div>` : ''}
+        <div class="ig-post-actions">
+          ${p.caption ? `<button class="btn btn-sm" onclick="copyIgCaption(${p.id}, this)">Caption kopieren</button>` : ''}
+          <button class="btn btn-sm btn-danger" onclick="deleteIgPost(${p.id})">Löschen</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function copyIgCaption(postId, btn) {
+  // Finde caption-text im DOM
+  const card = btn.closest('.ig-post-card');
+  if (!card) return;
+  const captionEl = card.querySelector('.ig-caption-text');
+  const hashEl = card.querySelector('.ig-hashtags');
+  const text = (captionEl ? captionEl.textContent : '') + (hashEl ? '\n\n' + hashEl.textContent : '');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Kopiert';
+    setTimeout(() => { btn.textContent = 'Caption kopieren'; }, 2000);
+  });
+}
+
+async function deleteIgPost(postId) {
+  if (!confirm('Instagram-Beitrag wirklich löschen?')) return;
+  try {
+    await api('DELETE', `/api/instagram/${postId}`);
+    if (state.selectedCustomer) loadIgPosts(state.selectedCustomer.id);
+  } catch (e) { alert('Fehler: ' + e.message); }
+}
+
+// ════════════════════════════════════════════════════════
+// BRANDING
+// ════════════════════════════════════════════════════════
+function syncColorPicker(inputId, pickerId) {
+  const input = $(inputId);
+  const picker = $(pickerId);
+  if (!input || !picker) return;
+  picker.addEventListener('input', () => { input.value = picker.value; });
+  input.addEventListener('change', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(input.value)) picker.value = input.value;
+  });
+}
+syncColorPicker('br-primary', 'br-primary-picker');
+syncColorPicker('br-secondary', 'br-secondary-picker');
+syncColorPicker('br-accent-col', 'br-accent-picker');
+
+async function loadBranding(kid) {
+  try {
+    const data = await api('GET', `/api/branding/${kid}`);
+    $('br-primary').value = data.primary_color || '';
+    if (data.primary_color && /^#[0-9a-fA-F]{6}$/.test(data.primary_color)) $('br-primary-picker').value = data.primary_color;
+    $('br-secondary').value = data.secondary_color || '';
+    if (data.secondary_color && /^#[0-9a-fA-F]{6}$/.test(data.secondary_color)) $('br-secondary-picker').value = data.secondary_color;
+    $('br-accent-col').value = data.accent_color || '';
+    if (data.accent_color && /^#[0-9a-fA-F]{6}$/.test(data.accent_color)) $('br-accent-picker').value = data.accent_color;
+    $('br-font-haupt').value = data.font_haupt || '';
+    $('br-font-text').value = data.font_text || '';
+    $('br-design-stil').value = data.design_stil || '';
+    $('br-bildsprache').value = data.bildsprache || '';
+  } catch (e) {}
+}
+
+$('btn-branding-save').addEventListener('click', async () => {
+  if (!state.selectedCustomer) return;
+  hideEl('branding-error');
+  const payload = {
+    primary_color:   $('br-primary').value.trim(),
+    secondary_color: $('br-secondary').value.trim(),
+    accent_color:    $('br-accent-col').value.trim(),
+    font_haupt:      $('br-font-haupt').value.trim(),
+    font_text:       $('br-font-text').value.trim(),
+    design_stil:     $('br-design-stil').value.trim(),
+    bildsprache:     $('br-bildsprache').value.trim(),
+  };
+  try {
+    await api('PUT', `/api/branding/${state.selectedCustomer.id}`, payload);
+    showEl('branding-saved-msg');
+    setTimeout(() => hideEl('branding-saved-msg'), 2500);
+  } catch (e) {
+    $('branding-error').textContent = e.message || 'Fehler beim Speichern.';
+    showEl('branding-error');
+  }
+});
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+initMonthYear();
+loadCustomers();
+</script>
+<script>
+(async function() {
+  try {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    if (!res.ok) { window.location.replace("/login"); return; }
+    const u = await res.json();
+    const nameEl = document.getElementById("me-name");
+    const avatarEl = document.getElementById("me-avatar");
+    if (nameEl) nameEl.textContent = u.vorname;
+    if (avatarEl) { avatarEl.textContent = (u.vorname?.[0]||"")+(u.nachname?.[0]||""); }
+  } catch { window.location.replace("/login"); }
+})();
+async function logout() {
+  await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+  window.location.replace("/login");
+}
+</script>
+</body>
+</html>

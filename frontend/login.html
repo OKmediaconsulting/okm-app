@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<title>OK Media Consulting — Login</title>
+<link rel="manifest" href="/static/manifest.json">
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/static/sw.js');</script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f4f6f8;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px; height: 52px;
+  background: #2563eb;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.logo-mark span {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -1px;
+}
+
+.logo h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+.logo p {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+.field input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #111827;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus { border-color: #2563eb; }
+.field input.error { border-color: #dc2626; }
+
+.btn-login {
+  width: 100%;
+  height: 48px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s, opacity 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-login:hover { background: #1d4ed8; }
+.btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.error-msg {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+.error-msg.show { display: block; }
+
+.forgot {
+  text-align: right;
+  margin-top: 4px;
+}
+.forgot a {
+  font-size: 12px;
+  color: #6b7280;
+  text-decoration: none;
+}
+.forgot a:hover { color: #2563eb; }
+
+.footer {
+  text-align: center;
+  margin-top: 32px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark"><span>OK</span></div>
+    <h1>OK Media Consulting</h1>
+    <p>Melde dich mit deinem Account an</p>
+  </div>
+
+  <div class="error-msg" id="err"></div>
+
+  <form id="form" onsubmit="login(event)">
+    <div class="field">
+      <label>E-Mail-Adresse</label>
+      <input type="email" id="email" placeholder="name@okmediaconsulting.net"
+             autocomplete="email" required>
+    </div>
+    <div class="field">
+      <label>Passwort</label>
+      <input type="password" id="password" placeholder="••••••••"
+             autocomplete="current-password" required>
+    </div>
+    <div class="forgot">
+      <a href="#" onclick="showForgot()">Passwort vergessen?</a>
+    </div>
+    <button class="btn-login" type="submit" id="btn">
+      <span id="btn-text">Einloggen</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+  </form>
+
+  <div class="footer">OK Media Consulting &copy; 2026</div>
+</div>
+
+<script>
+async function login(e) {
+  e.preventDefault();
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn      = document.getElementById('btn');
+  const errEl    = document.getElementById('err');
+
+  btn.disabled = true;
+  document.getElementById('btn-text').textContent = 'Wird geprüft…';
+  document.getElementById('spinner').style.display = 'block';
+  errEl.classList.remove('show');
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+      credentials: 'include'
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showError(data.detail || 'Login fehlgeschlagen');
+      return;
+    }
+    window.location.replace('/dashboard');
+  } catch {
+    showError('Verbindung zum Server fehlgeschlagen');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btn-text').textContent = 'Einloggen';
+    document.getElementById('spinner').style.display = 'none';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('err');
+  el.textContent = msg;
+  el.classList.add('show');
+  document.getElementById('email').classList.add('error');
+  document.getElementById('password').classList.add('error');
+}
+
+function showForgot() {
+  alert('Bitte kontaktiere den Administrator, um dein Passwort zurückzusetzen.');
+}
+
+// Clear error on input
+document.addEventListener('input', () => {
+  document.getElementById('err').classList.remove('show');
+  document.querySelectorAll('input').forEach(i => i.classList.remove('error'));
+});
+
+// Auto-focus email field
+window.addEventListener('load', () => {
+  document.getElementById('email').focus();
+});
+</script>
+</body>
+</html>

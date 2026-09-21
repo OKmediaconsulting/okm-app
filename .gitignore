@@ -1,0 +1,10 @@
+.DS_Store
+*.log
+__pycache__/
+*.pyc
+config.json
+canva_tokens.json
+config.json
+canva_tokens.json
+*.db
+.claude/

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/static/sw.js");</script>
+<title>OK Media — Systemgesundheit</title>
+<link rel="stylesheet" href="/static/okm.css">
+<style>
+  :root{--bg:#f4f6f8;--panel:#ffffff;--border:#e5e7eb;--text:#111827;--muted:#6b7280;--accent:#2563eb;--gold:#d97706;--green:#16a34a;--red:#dc2626;--orange:#d97706}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+
+  /* NAV */
+  .topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:100}
+  .topbar .logo{font-size:18px;font-weight:700;color:var(--accent);text-decoration:none;letter-spacing:1px;margin-right:8px}
+  .topbar a{color:var(--muted);text-decoration:none;font-size:14px;padding:6px 12px;border-radius:6px;transition:all .2s;border:1px solid transparent}
+  .topbar a:hover{color:var(--text);background:rgba(255,255,255,.06)}
+  .topbar a.active{color:var(--accent);border-color:rgba(88,166,255,.3)}
+  .topbar a.denkt{color:var(--gold);border-color:rgba(210,153,34,.4)}
+  .topbar a.denkt:hover{background:rgba(210,153,34,.08)}
+
+  /* MAIN */
+  .container{max-width:960px;margin:0 auto;padding:32px 24px}
+  h1{font-size:22px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+  .subtitle{color:var(--muted);font-size:14px;margin-bottom:28px}
+
+  /* SCORE PANEL */
+  .score-panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:28px 32px;display:flex;align-items:center;gap:32px;margin-bottom:28px}
+  .score-ring{flex-shrink:0;position:relative;width:110px;height:110px}
+  .score-ring svg{transform:rotate(-90deg)}
+  .score-ring .score-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:28px;font-weight:800;line-height:1}
+  .score-ring .score-label{font-size:11px;color:var(--muted);margin-top:2px}
+  .score-info{flex:1}
+  .score-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:10px}
+  .badge-stabil{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+  .badge-warnung{background:rgba(210,153,34,.15);color:var(--gold);border:1px solid rgba(210,153,34,.3)}
+  .badge-kritisch{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+  .score-counts{display:flex;gap:20px;margin-top:8px}
+  .sc{font-size:13px;display:flex;align-items:center;gap:5px}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .dot-ok{background:var(--green)}
+  .dot-warn{background:var(--gold)}
+  .dot-err{background:var(--red)}
+  .score-meta{font-size:12px;color:var(--muted);margin-top:10px}
+
+  /* ACTION BAR */
+  .action-bar{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+  .btn{padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-size:14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+  .btn:hover{background:rgba(255,255,255,.1)}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#0d1117;font-weight:600}
+  .btn-primary:hover{opacity:.9}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none}
+  .spinning .spinner{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .last-check{color:var(--muted);font-size:13px;margin-left:auto}
+
+  /* CATEGORIES */
+  .category{margin-bottom:24px}
+  .cat-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:10px;padding-left:4px}
+
+  /* CHECK CARDS */
+  .check-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:border-color .2s}
+  .check-card:hover{border-color:rgba(88,166,255,.25)}
+  .check-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none}
+  .status-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+  .icon-ok{background:rgba(63,185,80,.2);color:var(--green);border:1px solid rgba(63,185,80,.4)}
+  .icon-warning{background:rgba(210,153,34,.2);color:var(--gold);border:1px solid rgba(210,153,34,.4)}
+  .icon-error{background:rgba(248,81,73,.2);color:var(--red);border:1px solid rgba(248,81,73,.4)}
+  .check-name{flex:1;font-size:14px;font-weight:500}
+  .check-msg{font-size:13px;color:var(--muted);max-width:400px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chevron{color:var(--muted);font-size:12px;transition:transform .2s;flex-shrink:0}
+  .check-card.open .chevron{transform:rotate(180deg)}
+  .check-body{display:none;padding:0 16px 14px 48px;font-size:13px;color:var(--muted)}
+  .check-card.open .check-body{display:block}
+  .detail-text{margin-bottom:8px;line-height:1.5}
+
+  /* REPAIR SECTION */
+  .repair-box{background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.2);border-radius:8px;padding:14px 16px;margin-top:8px}
+  .repair-box.warning-repair{background:rgba(210,153,34,.06);border-color:rgba(210,153,34,.2)}
+  .repair-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+  .repair-risk{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .repair-btn{padding:6px 14px;border-radius:6px;border:1px solid rgba(248,81,73,.4);background:transparent;color:var(--red);font-size:13px;cursor:pointer;transition:all .2s}
+  .repair-btn.warning-repair-btn{border-color:rgba(210,153,34,.4);color:var(--gold)}
+  .repair-btn:hover{background:rgba(248,81,73,.12)}
+  .repair-btn.warning-repair-btn:hover{background:rgba(210,153,34,.12)}
+
+  /* CONFIRM MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:480px;width:90%}
+  .modal h3{font-size:17px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .modal p{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+  .modal .risk-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--orange);margin:12px 0 4px}
+  .modal-actions{display:flex;gap:10px;margin-top:20px}
+  .btn-danger{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+  .btn-danger:hover{opacity:.9}
+  .btn-cancel{color:var(--muted)}
+
+  /* REPAIR RESULT */
+  .repair-result{padding:10px 14px;border-radius:8px;font-size:13px;margin-top:8px;display:none}
+  .repair-result.ok{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);color:var(--green)}
+  .repair-result.fail{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);color:var(--red)}
+
+  /* LOADING SKELETON */
+  .skeleton{background:linear-gradient(90deg,var(--panel) 25%,rgba(255,255,255,.04) 50%,var(--panel) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:10px;height:52px;margin-bottom:8px}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* EMPTY STATE */
+  .empty-state{text-align:center;padding:60px 0;color:var(--muted)}
+  .empty-icon{font-size:40px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<nav class="okm-topbar">
+  <a href="/dashboard" class="okm-logo">OK <span>Media</span></a>
+  <div class="okm-nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/crm">CRM</a>
+    <a href="/skripte">Skripte</a>
+    <a href="/recherche">Recherche</a>
+    <a href="/denkt-mit">Denkt mit</a>
+    <a href="/systemgesundheit" class="active">System</a>
+  </div>
+  <div class="okm-topbar-right" style="display:flex;align-items:center;gap:8px;margin-left:auto">
+    <span id="me-name" style="font-size:12px;color:var(--muted)"></span>
+    <button id="me-avatar" onclick="logout()" title="Abmelden"
+      style="width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0">?</button>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>⚕ Systemgesundheit</h1>
+  <p class="subtitle">Vollständige Selbstdiagnose aller Module, APIs, Datenbanken und Dateien</p>
+
+  <div class="score-panel" id="scorePanel" style="display:none">
+    <div class="score-ring">
+      <svg width="110" height="110" viewBox="0 0 110 110">
+        <circle cx="55" cy="55" r="46" fill="none" stroke="var(--border)" stroke-width="10"/>
+        <circle id="scoreCircle" cx="55" cy="55" r="46" fill="none" stroke="var(--green)" stroke-width="10"
+                stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/>
+      </svg>
+      <div class="score-val">
+        <span id="scoreNum">—</span>
+        <span class="score-label">Score</span>
+      </div>
+    </div>
+    <div class="score-info">
+      <div id="scoreBadge" class="score-badge">—</div>
+      <div class="score-counts">
+        <div class="sc"><div class="dot dot-ok"></div><span id="okCount">0</span> OK</div>
+        <div class="sc"><div class="dot dot-warn"></div><span id="warnCount">0</span> Warnungen</div>
+        <div class="sc"><div class="dot dot-err"></div><span id="errCount">0</span> Kritisch</div>
+      </div>
+      <div class="score-meta" id="scoreMeta"></div>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn btn-primary" id="checkBtn" onclick="runCheck()">
+      <span class="spinner"></span>
+      <span id="checkBtnText">🔍 System prüfen</span>
+    </button>
+    <span class="last-check" id="lastCheck"></span>
+  </div>
+
+  <div id="checksArea">
+    <div class="empty-state">
+      <div class="empty-icon">🔬</div>
+      <div>Klicke auf „System prüfen" um die Diagnose zu starten</div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h3>⚠️ Reparatur bestätigen</h3>
+    <p id="modalRepairName" style="font-weight:600;color:var(--text)"></p>
+    <p id="modalRepairDesc"></p>
+    <div class="risk-label">Risiko</div>
+    <p id="modalRisk"></p>
+    <p style="margin-top:14px">Vor der Reparatur wird automatisch ein Backup aller Datenbanken erstellt.</p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="confirmRepairBtn" onclick="executeRepair()">✓ Jetzt reparieren</button>
+      <button class="btn btn-cancel" onclick="closeModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let pendingRepairId = null;
+let lastResult = null;
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function runCheck() {
+  const btn = document.getElementById('checkBtn');
+  const txt = document.getElementById('checkBtnText');
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  txt.textContent = 'Prüfe…';
+
+  // show skeletons
+  const area = document.getElementById('checksArea');
+  area.innerHTML = Array(8).fill('<div class="skeleton"></div>').join('');
+  document.getElementById('scorePanel').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/system/health', { method: 'POST' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    lastResult = await res.json();
+    renderResult(lastResult);
+  } catch(e) {
+    area.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div>Fehler: ${esc(e.message)}</div></div>`;
+  } finally {
+    btn.classList.remove('spinning');
+    btn.disabled = false;
+    txt.textContent = '🔄 Erneut prüfen';
+  }
+}
+
+function renderResult(data) {
+  // Score panel
+  const score = data.score;
+  const color = score >= 90 ? 'var(--green)' : score >= 70 ? 'var(--gold)' : 'var(--red)';
+  const circ  = document.getElementById('scoreCircle');
+  const circumference = 289;
+  circ.style.strokeDashoffset = circumference - (score / 100) * circumference;
+  circ.style.stroke = color;
+  document.getElementById('scoreNum').textContent = score + '%';
+  document.getElementById('okCount').textContent = data.ok_count;
+  document.getElementById('warnCount').textContent = data.warning_count;
+  document.getElementById('errCount').textContent = data.critical_count;
+
+  const badge = document.getElementById('scoreBadge');
+  const statusMap = { 'Stabil': 'badge-stabil', 'Warnung': 'badge-warnung', 'Kritisch': 'badge-kritisch' };
+  badge.className = 'score-badge ' + (statusMap[data.status] || 'badge-warnung');
+  badge.textContent = data.status;
+
+  const ts = new Date(data.timestamp);
+  document.getElementById('scoreMeta').textContent =
+    `${data.total_checks} Checks in ${data.elapsed_sec}s — ${ts.toLocaleTimeString('de-DE')}`;
+  document.getElementById('lastCheck').textContent = 'Letzter Check: ' + ts.toLocaleTimeString('de-DE');
+  document.getElementById('scorePanel').style.display = 'flex';
+
+  // Group by category
+  const cats = {};
+  for (const c of data.checks) {
+    if (!cats[c.category]) cats[c.category] = [];
+    cats[c.category].push(c);
+  }
+
+  // Sort categories: errors first
+  const catOrder = Object.keys(cats).sort((a, b) => {
+    const aHasErr = cats[a].some(c => c.status === 'error') ? 0 : cats[a].some(c => c.status === 'warning') ? 1 : 2;
+    const bHasErr = cats[b].some(c => c.status === 'error') ? 0 : cats[b].some(c => c.status === 'warning') ? 1 : 2;
+    return aHasErr - bHasErr;
+  });
+
+  let html = '';
+  for (const cat of catOrder) {
+    html += `<div class="category"><div class="cat-title">${esc(cat)}</div>`;
+    for (const c of cats[cat]) {
+      html += renderCheck(c);
+    }
+    html += '</div>';
+  }
+
+  document.getElementById('checksArea').innerHTML = html;
+}
+
+function renderCheck(c) {
+  const iconMap = { ok: '✓', warning: '!', error: '✕' };
+  const iconClass = { ok: 'icon-ok', warning: 'icon-warning', error: 'icon-error' };
+  const isOk = c.status === 'ok';
+  const hasDetail = c.detail || c.repair_id;
+
+  let bodyHtml = '';
+  if (c.detail) {
+    bodyHtml += `<div class="detail-text">${esc(c.detail)}</div>`;
+  }
+  if (c.repair_id) {
+    const repClass = c.status === 'warning' ? 'warning-repair' : '';
+    const btnClass = c.status === 'warning' ? 'warning-repair-btn' : '';
+    bodyHtml += `
+      <div class="repair-box ${repClass}">
+        <div class="repair-title">🔧 Reparatur verfügbar</div>
+        <div class="repair-risk">${esc(c.repair_description)}</div>
+        <button class="repair-btn ${btnClass}" onclick="openRepairModal('${esc(c.repair_id)}','${esc(c.message)}','${esc(c.repair_description)}')">
+          Reparatur vorbereiten
+        </button>
+        <div class="repair-result" id="result_${esc(c.id)}"></div>
+      </div>`;
+  }
+
+  const openByDefault = c.status !== 'ok' ? 'open' : '';
+  const chevronStyle = hasDetail || !isOk ? '' : 'visibility:hidden';
+
+  return `
+    <div class="check-card ${openByDefault}" id="card_${esc(c.id)}">
+      <div class="check-header" onclick="toggleCard('card_${esc(c.id)}')">
+        <div class="status-icon ${iconClass[c.status]}">${iconMap[c.status]}</div>
+        <div class="check-name">${esc(c.name)}</div>
+        <div class="check-msg">${esc(c.message)}</div>
+        <div class="chevron" style="${chevronStyle}">▼</div>
+      </div>
+      ${bodyHtml ? `<div class="check-body">${bodyHtml}</div>` : ''}
+    </div>`;
+}
+
+function toggleCard(id) {
+  document.getElementById(id)?.classList.toggle('open');
+}
+
+function openRepairModal(repairId, name, desc) {
+  pendingRepairId = repairId;
+  document.getElementById('modalRepairName').textContent = name;
+  document.getElementById('modalRepairDesc').textContent = desc || '';
+  // fetch risk info
+  fetch('/api/system/repair/' + repairId)
+    .then(r => r.json())
+    .then(info => {
+      document.getElementById('modalRisk').textContent = info.risk || 'Niedrig';
+    })
+    .catch(() => {
+      document.getElementById('modalRisk').textContent = 'Unbekannt';
+    });
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('open');
+  pendingRepairId = null;
+}
+
+async function executeRepair() {
+  if (!pendingRepairId) return;
+  const btn = document.getElementById('confirmRepairBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Repariere…';
+
+  try {
+    const res = await fetch('/api/system/repair/' + pendingRepairId, { method: 'POST' });
+    const data = await res.json();
+    closeModal();
+
+    // find result div — search by repair_id in last result
+    if (lastResult) {
+      const check = lastResult.checks.find(c => c.repair_id === pendingRepairId);
+      if (check) {
+        const el = document.getElementById('result_' + check.id);
+        if (el) {
+          el.style.display = 'block';
+          el.className = 'repair-result ' + (data.ok ? 'ok' : 'fail');
+          el.textContent = data.ok
+            ? '✓ ' + (data.message || 'Erfolgreich') + (data.backup ? ' | Backup: ' + data.backup : '')
+            : '✕ Fehler: ' + data.message;
+        }
+      }
+    }
+
+    // re-run check after short delay
+    if (data.ok) {
+      setTimeout(() => runCheck(), 1500);
+    }
+  } catch(e) {
+    closeModal();
+    alert('Fehler bei Reparatur: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✓ Jetzt reparieren';
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Auto-run on load
+runCheck();
+</script>
+<script>
+(async function() {
+  try {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    if (!res.ok) { window.location.replace("/login"); return; }
+    const u = await res.json();
+    const nameEl = document.getElementById("me-name");
+    const avatarEl = document.getElementById("me-avatar");
+    if (nameEl) nameEl.textContent = u.vorname;
+    if (avatarEl) { avatarEl.textContent = (u.vorname?.[0]||"")+(u.nachname?.[0]||""); }
+  } catch { window.location.replace("/login"); }
+})();
+async function logout() {
+  await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+  window.location.replace("/login");
+}
+</script>
+</body>
+</html>
