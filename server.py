@@ -1163,21 +1163,25 @@ async def api_angebot_loeschen(aid: int, request: Request):
     return {"ok": True}
 
 @app.get("/api/crm/angebote-stats")
-async def api_angebote_stats():
+async def api_angebote_stats(request: Request):
+    _require(request, "customers.view")
     return crm_tools.angebote_stats()
 
 # ── Recherche API ──────────────────────────────────────────────────────────────
 
 @app.get("/api/recherche")
-async def api_recherche_liste(suche: str = "", thema: str = ""):
+async def api_recherche_liste(request: Request, suche: str = "", thema: str = ""):
+    _require(request, "research.view")
     return research_tools.recherchen_liste(suche, thema)
 
 @app.get("/api/recherche/themen")
-async def api_recherche_themen():
+async def api_recherche_themen(request: Request):
+    _require(request, "research.view")
     return research_tools.themen_liste()
 
 @app.get("/api/recherche/{rid}")
-async def api_recherche_detail(rid: int):
+async def api_recherche_detail(rid: int, request: Request):
+    _require(request, "research.view")
     r = research_tools.recherche_detail(rid)
     if r is None:
         raise HTTPException(404, "Nicht gefunden")
@@ -1327,7 +1331,9 @@ async def api_canva_brand_templates():
 # ── Canva: pro Kunde konfigurieren + generieren ──────────────────────────────
 
 @app.put("/api/skripte/kunden/{kid}/canva-config")
-async def api_canva_config_setzen(kid: int, data: dict):
+async def api_canva_config_setzen(kid: int, request: Request, data: dict):
+    _require(request, "scripts.edit")
+    _check_customer_access(request, kid)
     if not scripts_tools.kunde_detail(kid):
         raise HTTPException(404, "Kunde nicht gefunden")
     medien_pfad = str(data.get("medien_pfad", "")).strip()
@@ -1341,11 +1347,15 @@ async def api_canva_config_setzen(kid: int, data: dict):
     return {"ok": True}
 
 @app.get("/api/skripte/kunden/{kid}/canva-posts")
-async def api_canva_posts(kid: int):
+async def api_canva_posts(kid: int, request: Request):
+    _require(request, "scripts.view")
+    _check_customer_access(request, kid)
     return scripts_tools.canva_posts_fuer_kunde(kid)
 
 @app.post("/api/skripte/kunden/{kid}/canva-run")
-async def api_canva_run(kid: int):
+async def api_canva_run(kid: int, request: Request):
+    _require(request, "scripts.create")
+    _check_customer_access(request, kid)
     # Laeuft als eigener Subprozess: der Hauptserver haelt bereits eine
     # eigene Playwright-Browserinstanz (browser_tools.py) fuer die
     # Sprachsteuerung, eine zweite im selben Prozess blockiert/haengt.
@@ -1374,8 +1384,11 @@ async def api_canva_post_download(post_id: int):
     return FileResponse(post["image_path"], filename=os.path.basename(post["image_path"]), media_type="image/png")
 
 @app.post("/api/skripte/generieren")
-async def api_skripte_generieren(data: dict):
+async def api_skripte_generieren(request: Request, data: dict):
     """Generiert 4 Reel-Skripte für einen Kunden und Monat."""
+    _require(request, "scripts.create")
+    if "kunden_id" in data:
+        _check_customer_access(request, int(data["kunden_id"]))
     if "kunden_id" not in data or "monat" not in data:
         raise HTTPException(400, "kunden_id und monat erforderlich")
     try:
@@ -1656,14 +1669,16 @@ DREHHINWEIS: [Optional]
 
 
 @app.post("/api/skripte/einzeln")
-async def api_skript_einzeln(data: dict):
+async def api_skript_einzeln(request: Request, data: dict):
     """Generiert ein einzelnes Reel-Skript für ein bestimmtes Thema."""
+    _require(request, "scripts.create")
     if "kunden_id" not in data or not data.get("thema", "").strip():
         raise HTTPException(400, "kunden_id und thema erforderlich")
     try:
         kid = int(data["kunden_id"])
     except (ValueError, TypeError):
         raise HTTPException(400, "kunden_id muss eine Zahl sein")
+    _check_customer_access(request, kid)
 
     thema = str(data["thema"]).strip()
     zusatzinfo = str(data.get("zusatzinfo", "")).strip()
@@ -2034,11 +2049,13 @@ async def api_kunde_profil_update(kid: int, request: Request, data: dict):
 
 
 @app.post("/api/skripte/{skript_id}/beitrag-story")
-async def api_beitrag_story(skript_id: int):
+async def api_beitrag_story(skript_id: int, request: Request):
     """Generiert Beitragstext + Story-Titel für ein bestehendes Skript."""
+    _require(request, "scripts.edit")
     skript = scripts_tools.skript_detail(skript_id)
     if not skript:
         raise HTTPException(404, "Skript nicht gefunden")
+    _check_customer_access(request, skript["kunden_id"])
     kunde = scripts_tools.kunde_detail(skript["kunden_id"])
     if not kunde:
         raise HTTPException(404, "Kunde nicht gefunden")
@@ -2124,9 +2141,12 @@ STORY:
 
 
 @app.post("/api/crm/email-entwurf")
-async def api_email_entwurf(data: dict):
+async def api_email_entwurf(request: Request, data: dict):
     """Generiert einen E-Mail-Entwurf basierend auf Kundendaten und Kontext."""
+    _require(request, "customers.edit")
     kid = data.get("kunden_id")
+    if kid:
+        _check_customer_access(request, int(kid))
     kontext = data.get("kontext", "")
     kunde = crm_tools.kunde_detail(kid)
     if not kunde:
@@ -2185,8 +2205,9 @@ async def denkt_mit_page():
 
 
 @app.post("/api/jarvis/denkt-mit")
-async def api_denkt_mit():
+async def api_denkt_mit(request: Request):
     """Analysiert alle Programmdaten und gibt Jarvis-Empfehlungen zurück."""
+    _require(request, "research.view")
     from datetime import date as _date, timedelta
 
     heute = _date.today().isoformat()
