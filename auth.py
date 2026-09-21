@@ -379,21 +379,27 @@ def update_user_status(user_id: int, status: str, by_user_id: int, org_id: int):
 
 # ── Customer access control ───────────────────────────────────────────────────
 
-def get_accessible_customer_ids(user_id: int, db_quelle: str) -> Optional[list]:
+def get_accessible_customer_ids(user_id: int, db_quelle: Optional[str]) -> Optional[list]:
     """None = full access (owner/manager). List = restricted to these IDs."""
     role = get_user_role_name(user_id)
     if role in ("owner", "manager"):
         return None
     con = _db()
-    rows = con.execute(
-        "SELECT kunden_id FROM customer_assignments WHERE user_id=? AND db_quelle=?",
-        (user_id, db_quelle)
-    ).fetchall()
+    if db_quelle:
+        rows = con.execute(
+            "SELECT kunden_id FROM customer_assignments WHERE user_id=? AND db_quelle=?",
+            (user_id, db_quelle)
+        ).fetchall()
+    else:
+        rows = con.execute(
+            "SELECT kunden_id FROM customer_assignments WHERE user_id=?",
+            (user_id,)
+        ).fetchall()
     con.close()
     return [r["kunden_id"] for r in rows]
 
 
-def can_access_customer(user_id: int, kunden_id: int, db_quelle: str) -> bool:
+def can_access_customer(user_id: int, kunden_id: int, db_quelle: Optional[str]) -> bool:
     allowed = get_accessible_customer_ids(user_id, db_quelle)
     if allowed is None:
         return True

@@ -127,6 +127,50 @@
 .empty-state {
   text-align: center; padding: 48px 24px; color: var(--muted);
 }
+
+/* Assignment drawer */
+.drawer-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+  z-index: 300; display: flex; justify-content: flex-end;
+}
+.drawer {
+  background: var(--surface); width: 100%; max-width: 420px;
+  height: 100%; display: flex; flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+}
+.drawer-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.drawer-header h3 { font-size: 16px; font-weight: 700; }
+.drawer-close {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: none; background: var(--bg); cursor: pointer;
+  font-size: 18px; color: var(--muted); display: flex; align-items: center; justify-content: center;
+}
+.drawer-body { flex: 1; overflow-y: auto; padding: 16px 24px; }
+.customer-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.customer-row:last-child { border-bottom: none; }
+.customer-name { font-size: 14px; font-weight: 500; }
+.customer-cat  { font-size: 11px; color: var(--muted); }
+.toggle-assign {
+  height: 28px; padding: 0 12px; border-radius: 6px;
+  font-size: 12px; font-weight: 600; border: 1px solid;
+  cursor: pointer; transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.toggle-assign.assigned {
+  background: #ecfdf5; color: #065f46; border-color: #6ee7b7;
+}
+.toggle-assign.assigned:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+.toggle-assign.not-assigned {
+  background: var(--bg); color: var(--muted); border-color: var(--border);
+}
+.toggle-assign.not-assigned:hover { background: #eff6ff; color: var(--blue); border-color: #bfdbfe; }
 .empty-state svg { opacity: 0.3; margin-bottom: 12px; }
 
 .section-header {
@@ -142,6 +186,24 @@
 }
 
 #me-role { display: none; }
+
+.tab-btn {
+  height: 34px; padding: 0 14px; border-radius: 8px;
+  border: 1px solid transparent; background: transparent;
+  font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.tab-btn:hover { background: var(--bg); color: var(--text); }
+.tab-btn.active { background: var(--surface); border-color: var(--border); color: var(--text); font-weight: 600; }
+
+.audit-row {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.audit-row:last-child { border-bottom: none; }
+.audit-time { color: var(--muted); white-space: nowrap; min-width: 90px; }
+.audit-who  { font-weight: 600; min-width: 100px; }
+.audit-what { color: var(--text); flex: 1; }
 </style>
 </head>
 <body>
@@ -165,16 +227,27 @@
 
 <main class="okm-main">
   <div class="section-header">
-    <h2>Team</h2>
+    <div style="display:flex;gap:4px">
+      <button class="tab-btn active" id="tab-team" onclick="switchTab('team')">Team</button>
+      <button class="tab-btn" id="tab-audit" onclick="switchTab('audit')">Aktivitätslog</button>
+    </div>
     <button class="btn-primary" id="btn-invite" onclick="openInvite()" style="display:none">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Einladen
     </button>
   </div>
-  <p style="font-size:13px;color:var(--muted);margin-bottom:4px">Alle Mitglieder deiner Organisation</p>
 
-  <div class="team-grid" id="team-grid">
-    <div class="empty-state">Lade…</div>
+  <!-- Team Tab -->
+  <div id="pane-team">
+    <p style="font-size:13px;color:var(--muted);margin:8px 0 4px">Alle Mitglieder deiner Organisation</p>
+    <div class="team-grid" id="team-grid">
+      <div class="empty-state">Lade…</div>
+    </div>
+  </div>
+
+  <!-- Audit Tab -->
+  <div id="pane-audit" style="display:none;margin-top:16px">
+    <div id="audit-list"><div class="empty-state">Lade…</div></div>
   </div>
 </main>
 
@@ -266,10 +339,13 @@ function renderTeam(users) {
 
   grid.innerHTML = users.map(u => {
     const isMe = u.id === currentUser.id;
+    const isEmployee = u.rolle_name === 'employee';
     const aktionsButtons = !isMe && canEdit ? `
       <button class="btn-sm" onclick="toggleStatus(${u.id}, '${u.status}')">
         ${u.status === 'active' ? 'Deaktivieren' : 'Aktivieren'}
-      </button>` : '';
+      </button>
+      ${isEmployee ? `<button class="btn-sm" onclick="openAssignment(${u.id}, '${esc(u.vorname)} ${esc(u.nachname)}')">Kunden zuweisen</button>` : ''}
+      ` : '';
 
     return `
     <div class="user-card">
@@ -382,6 +458,129 @@ function esc(s) {
 }
 
 init();
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('pane-team').style.display  = tab === 'team'  ? '' : 'none';
+  document.getElementById('pane-audit').style.display = tab === 'audit' ? '' : 'none';
+  document.getElementById('tab-team').classList.toggle('active',  tab === 'team');
+  document.getElementById('tab-audit').classList.toggle('active', tab === 'audit');
+  if (tab === 'audit') loadAudit();
+}
+
+async function loadAudit() {
+  const res = await fetch('/api/auth/audit', { credentials: 'include' });
+  const list = document.getElementById('audit-list');
+  if (!res.ok) { list.innerHTML = '<p style="color:var(--muted);font-size:13px">Keine Berechtigung</p>'; return; }
+  const rows = await res.json();
+  if (!rows.length) { list.innerHTML = '<div class="empty-state">Noch keine Aktivitäten</div>'; return; }
+
+  const actionLabels = {
+    'user.login': 'hat sich angemeldet',
+    'user.logout': 'hat sich abgemeldet',
+    'account.created': 'Account erstellt',
+    'user.invited': 'hat eingeladen',
+    'customer.created': 'Kunde erstellt',
+    'customer.deleted': 'Kunde gelöscht',
+    'customer.assigned': 'Kunde zugewiesen',
+    'customer.unassigned': 'Kunde entfernt',
+  };
+
+  list.innerHTML = rows.map(r => {
+    const time = new Date(r.erstellt_am + 'Z').toLocaleString('de', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const label = actionLabels[r.aktion] || r.aktion;
+    const detail = r.ressource_id ? ` (${esc(r.ressource_typ || '')} #${r.ressource_id})` : '';
+    return `<div class="audit-row">
+      <div class="audit-time">${time}</div>
+      <div class="audit-who">${esc(r.user_name || '–')}</div>
+      <div class="audit-what">${label}${detail}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Customer Assignment Drawer ────────────────────────────────────────────────
+let _drawerUid = null;
+let _allKunden = [];
+let _assignedIds = new Set();
+
+async function openAssignment(uid, name) {
+  _drawerUid = uid;
+  // Load all customers + current assignments in parallel
+  const [kundenRes, assignRes] = await Promise.all([
+    fetch('/api/crm/kunden', { credentials: 'include' }),
+    fetch(`/api/auth/users/${uid}/assignments`, { credentials: 'include' })
+  ]);
+  _allKunden = kundenRes.ok ? await kundenRes.json() : [];
+  const assigned = assignRes.ok ? await assignRes.json() : [];
+  _assignedIds = new Set(assigned.map(a => a.kunden_id));
+
+  // Build drawer
+  let drawerEl = document.getElementById('assignment-drawer-backdrop');
+  if (!drawerEl) {
+    drawerEl = document.createElement('div');
+    drawerEl.id = 'assignment-drawer-backdrop';
+    drawerEl.className = 'drawer-backdrop';
+    drawerEl.onclick = e => { if (e.target === drawerEl) closeAssignment(); };
+    document.body.appendChild(drawerEl);
+  }
+
+  drawerEl.innerHTML = `
+    <div class="drawer">
+      <div class="drawer-header">
+        <h3>Kunden für ${esc(name)}</h3>
+        <button class="drawer-close" onclick="closeAssignment()">×</button>
+      </div>
+      <div class="drawer-body" id="drawer-body">
+        ${_allKunden.length === 0
+          ? '<p style="color:var(--muted);font-size:13px">Keine Kunden gefunden.</p>'
+          : _allKunden.map(k => `
+          <div class="customer-row" id="crow-${k.id}">
+            <div>
+              <div class="customer-name">${esc(k.firma)}</div>
+              <div class="customer-cat">${esc(k.kategorie || '')}</div>
+            </div>
+            <button class="toggle-assign ${_assignedIds.has(k.id) ? 'assigned' : 'not-assigned'}"
+              onclick="toggleAssign(${uid}, ${k.id}, this)">
+              ${_assignedIds.has(k.id) ? 'Zugewiesen' : 'Zuweisen'}
+            </button>
+          </div>`).join('')
+        }
+      </div>
+    </div>`;
+  drawerEl.style.display = 'flex';
+}
+
+function closeAssignment() {
+  const el = document.getElementById('assignment-drawer-backdrop');
+  if (el) el.style.display = 'none';
+}
+
+async function toggleAssign(uid, kid, btn) {
+  const isAssigned = btn.classList.contains('assigned');
+  btn.disabled = true;
+  try {
+    let res;
+    if (isAssigned) {
+      res = await fetch(`/api/auth/users/${uid}/assignments/${kid}?db_quelle=crm`, {
+        method: 'DELETE', credentials: 'include'
+      });
+    } else {
+      res = await fetch(`/api/auth/users/${uid}/assignments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kunden_id: kid, db_quelle: 'crm' }),
+        credentials: 'include'
+      });
+    }
+    if (res.ok) {
+      btn.classList.toggle('assigned');
+      btn.classList.toggle('not-assigned');
+      btn.textContent = btn.classList.contains('assigned') ? 'Zugewiesen' : 'Zuweisen';
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
 </script>
 </body>
 </html>

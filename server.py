@@ -249,6 +249,34 @@ async def api_user_status(uid: int, request: Request):
     auth.update_user_status(uid, status, user["id"], user["org_id"])
     return {"ok": True}
 
+@app.get("/api/auth/users/{uid}/assignments")
+async def api_user_assignments(uid: int, request: Request):
+    _require(request, "users.view")
+    con = auth._db()
+    rows = con.execute(
+        "SELECT kunden_id, db_quelle FROM customer_assignments WHERE user_id=?", (uid,)
+    ).fetchall()
+    con.close()
+    return [dict(r) for r in rows]
+
+@app.post("/api/auth/users/{uid}/assignments")
+async def api_assign_customer(uid: int, request: Request):
+    user = _require(request, "users.edit")
+    body = await request.json()
+    kid = int(body.get("kunden_id", 0))
+    db_quelle = body.get("db_quelle", "crm")
+    if not kid:
+        raise HTTPException(400, "kunden_id erforderlich")
+    auth.assign_customer(uid, kid, db_quelle, user["id"], user["org_id"])
+    return {"ok": True}
+
+@app.delete("/api/auth/users/{uid}/assignments/{kid}")
+async def api_unassign_customer(uid: int, kid: int, request: Request):
+    user = _require(request, "users.edit")
+    db_quelle = request.query_params.get("db_quelle", "crm")
+    auth.unassign_customer(uid, kid, db_quelle, user["id"], user["org_id"])
+    return {"ok": True}
+
 @app.post("/api/auth/invite")
 async def api_invite(request: Request):
     user = request.state.user
