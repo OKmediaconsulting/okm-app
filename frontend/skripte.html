@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="/static/manifest.json">
 <link rel="apple-touch-icon" href="/static/icon-192.png">
@@ -96,10 +96,11 @@
   }
 
   @media (max-width: 768px) {
-    .app { height: auto; flex-direction: column; padding-top: 52px; padding-bottom: 70px; }
-    .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); overflow: visible; }
+    body { overflow-x: hidden; }
+    .app { height: auto; flex-direction: column; padding-top: 52px; padding-bottom: 70px; width: 100%; max-width: 100vw; }
+    .sidebar { width: 100%; max-width: 100vw; height: auto; border-right: none; border-bottom: 1px solid var(--border); overflow: hidden; }
     .customer-list { max-height: 50vh; overflow-y: auto; }
-    .main { overflow-y: visible; }
+    .main { overflow-y: visible; width: 100%; max-width: 100vw; box-sizing: border-box; overflow-x: hidden; }
     .app.detail-open .sidebar { display: none; }
     .app.detail-open .main { display: flex; }
     #mobile-back-skr {

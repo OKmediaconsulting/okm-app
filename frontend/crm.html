@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="/static/manifest.json">
 <link rel="apple-touch-icon" href="/static/icon-192.png">
@@ -205,17 +205,20 @@ body {
 
 /* ── MOBILE ── */
 @media (max-width: 768px) {
-  body { padding-bottom: 70px; }
+  body { padding-bottom: 70px; overflow-x: hidden; }
 
   #main {
     flex-direction: column;
     height: auto;
     overflow: visible;
+    width: 100%;
+    max-width: 100vw;
   }
 
   /* Sidebar = full width list on mobile */
   #sidebar {
     width: 100%;
+    max-width: 100vw;
     height: auto;
     overflow: visible;
     border-right: none;
@@ -227,11 +230,19 @@ body {
   #detail {
     padding: 16px;
     min-height: 50vh;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   /* When detail is active, hide list and show detail full screen */
   #main.detail-open #sidebar { display: none; }
-  #main.detail-open #detail { min-height: calc(100vh - 130px); }
+  #main.detail-open #detail {
+    min-height: calc(100vh - 130px);
+    width: 100%;
+    max-width: 100vw;
+  }
 
   /* Back button on mobile detail */
   #mobile-back {
@@ -249,14 +260,18 @@ body {
 
   /* Info grid single column */
   .info-grid { grid-template-columns: 1fr; }
+  .info-value { word-break: break-all; overflow-wrap: anywhere; font-size: 13px; }
 
   /* Stats row scrollable */
-  .top-stats { overflow-x: auto; gap: 16px; }
+  .top-stats { overflow-x: auto; gap: 12px; -webkit-overflow-scrolling: touch; }
+  .stat-num { font-size: 18px; }
 
-  /* CRM topbar compact on mobile */
-  #topbar { padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
-  .top-actions .btn:not(.primary) { display: none; }
+  /* CRM topbar compact on mobile — single row, no wrap */
+  #topbar { padding: 8px 12px; flex-wrap: nowrap; gap: 6px; overflow: hidden; }
+  .logo { font-size: 14px; white-space: nowrap; }
   .logo-sub { display: none; }
+  .top-actions .btn:not(.primary) { display: none; }
+  .top-actions .btn.primary { font-size: 12px; padding: 6px 12px; white-space: nowrap; }
 
   /* Modal full screen bottom sheet */
   .modal-bg { align-items: flex-end; }

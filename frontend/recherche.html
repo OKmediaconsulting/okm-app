@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="/static/manifest.json">
 <link rel="apple-touch-icon" href="/static/icon-192.png">
@@ -42,12 +42,18 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 #app { display:flex; height:calc(100vh - 57px); }
 
 @media (max-width: 768px) {
-  #app { flex-direction: column; height: auto; padding-bottom: 70px; }
-  #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  body { overflow-x: hidden; }
+  #app { flex-direction: column; height: auto; padding-bottom: 70px; width: 100%; max-width: 100vw; }
+  #sidebar { width: 100%; max-width: 100vw; height: auto; border-right: none; border-bottom: 1px solid var(--border); flex-shrink: 0; overflow: hidden; }
   #recherche-liste { max-height: 45vh; overflow-y: auto; }
-  #detail { padding: 16px; min-height: 50vh; }
+  #detail { padding: 16px; min-height: 50vh; width: 100%; max-width: 100vw; box-sizing: border-box; overflow: hidden; }
   #app.detail-open #sidebar { display: none; }
   #app.detail-open #detail { min-height: calc(100vh - 130px); }
+  .d-inhalt { padding: 14px; font-size: 13px; word-break: break-word; overflow-wrap: anywhere; }
+  .d-titel { font-size: 18px; }
+  .quelle-link { word-break: break-all; }
+  #topbar { padding: 8px 12px; }
+  .logo-sub { display: none; }
   #mobile-back-rch {
     display: flex; align-items: center; gap: 6px;
     background: none; border: none; color: var(--accent);
