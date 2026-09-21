@@ -68,6 +68,7 @@ EXEMPT_PATHS = (
     "/api/auth/login", "/api/auth/logout", "/api/auth/refresh",
     "/api/auth/setup", "/api/auth/accept-invite",
     "/api/health",
+    "/api/calendar/oauth/callback",
     "/static/", "/favicon.ico",
 )
 
